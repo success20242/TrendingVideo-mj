@@ -215,6 +215,35 @@ export default function TrendingVideo() {
           )}
         </>
       )}
+
+      <section className="bg-gray-100 dark:bg-gray-800 rounded-lg p-4 text-center mt-10">
+        <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200">👟 Partnered with 3Kings Boutique</h2>
+        <p className="text-gray-600 dark:text-gray-400 mt-2">
+          Discover top-quality imported shoes. Visit their store on Facebook.
+        </p>
+        <a
+          href="https://www.facebook.com/share/14E1rQ9My1r/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-block mt-3 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+        >
+          Shop 3Kings Boutique
+        </a>
+      </section>
+
+      <footer className="mt-12 text-center text-sm text-gray-500 dark:text-gray-400">
+        <p>
+          🔗 Visit our trusted fashion partner:{" "}
+          <a
+            href="https://www.facebook.com/share/14E1rQ9My1r/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-600 hover:underline"
+          >
+            3Kings Boutique on Facebook
+          </a>
+        </p>
+      </footer>
     </div>
   )
 }

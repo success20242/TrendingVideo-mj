@@ -32,6 +32,10 @@ export const metadata: Metadata = {
       "Watch trending YouTube videos by country and unlock exclusive Amazon deals. Subscribe for premium access!",
     images: ["https://i.ibb.co/wZzWzBpJ/Colorful-Minimalist-Social-Community-Logo-removebg-preview.png"],
   },
+  // New meta tag for article author
+  article: {
+    authors: ["https://www.facebook.com/share/14E1rQ9My1r/"],
+  },
 }
 
 export default function RootLayout({
