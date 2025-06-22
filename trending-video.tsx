@@ -100,6 +100,7 @@ export default function TrendingVideo() {
             <option value="US">United States</option>
             <option value="CA">Canada</option>
             <option value="GB">United Kingdom</option>
+            <option value="AE">United Arab Emirates</option> {/* Added UAE */}
             <option value="NG">Nigeria</option>
             <option value="IN">India</option>
             <option value="FR">France</option>
