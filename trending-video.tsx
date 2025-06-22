@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react"
 import axios from "axios"
-import Head from "next/head"
 
 export default function TrendingVideo() {
   const [videos, setVideos] = useState([])
@@ -40,22 +39,17 @@ export default function TrendingVideo() {
 
   useEffect(() => {
     const fetchTrendingVideos = async () => {
+      setLoading(true) // Set loading to true before fetching
       try {
-        const response = await axios.get("https://www.googleapis.com/youtube/v3/videos", {
-          params: {
-            part: "snippet",
-            chart: "mostPopular",
-            maxResults: 12,
-            regionCode: selectedCountry,
-            hl: selectedLanguage,
-            key: process.env.NEXT_PUBLIC_YOUTUBE_API_KEY,
-          },
+        const response = await axios.get("/api/trending", {
+          params: { country: selectedCountry, lang: selectedLanguage },
         })
-        setVideos(response.data.items)
-        setLoading(false)
+        setVideos(Array.isArray(response.data.items) ? response.data.items : [])
       } catch (error) {
         console.error("Error fetching trending videos:", error)
-        setLoading(false)
+        setVideos([]) // Ensure videos is an empty array on error
+      } finally {
+        setLoading(false) // Always set loading to false after attempt
       }
     }
 
@@ -88,60 +82,11 @@ export default function TrendingVideo() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-700 p-6 transition-colors duration-300">
-      <Head>
-        <title>🔥 TrendifyTube - Viral Videos + Smart Shopping</title>
-        <meta
-          name="description"
-          content="Watch trending YouTube videos by country and unlock exclusive Amazon deals. Subscribe for premium access!"
-        />
-        <meta charSet="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-
-        {/* Open Graph / Facebook */}
-        <meta property="og:type" content="website" />
-        <meta property="og:url" content="https://trendify12.vercel.app" />
-        <meta property="og:title" content="🔥 TrendifyTube - Viral Videos + Smart Shopping" />
-        <meta
-          property="og:description"
-          content="Watch trending YouTube videos by country and unlock exclusive Amazon deals. Subscribe for premium access!"
-        />
-        <meta
-          property="og:image"
-          content="https://i.ibb.co/wZzWzBpJ/Colorful-Minimalist-Social-Community-Logo-removebg-preview.png"
-        />
-
-        {/* Twitter */}
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:url" content="https://trendify12.vercel.app" />
-        <meta name="twitter:title" content="🔥 TrendifyTube - Viral Videos + Smart Shopping" />
-        <meta
-          name="twitter:description"
-          content="Watch trending YouTube videos by country and unlock exclusive Amazon deals. Subscribe for premium access!"
-        />
-        <meta
-          name="twitter:image"
-          content="https://i.ibb.co/wZzWzBpJ/Colorful-Minimalist-Social-Community-Logo-removebg-preview.png"
-        />
-
-        {/* Google Analytics */}
-        <script async src="https://www.googletagmanager.com/gtag/js?id=G-N68WW63XZ4"></script>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              window.dataLayer = window.dataLayer || [];
-              function gtag(){dataLayer.push(arguments);}
-              gtag('js', new Date());
-              gtag('config', 'G-N68WW63XZ4', { page_path: window.location.pathname });
-            `,
-          }}
-        />
-      </Head>
-
-      <header className="text-center mb-8">
+      <header className="text-center mb-8 max-w-5xl mx-auto">
         <img
           src="https://i.ibb.co/wZzWzBpJ/Colorful-Minimalist-Social-Community-Logo-removebg-preview.png"
-          alt="Logo"
-          className="mx-auto w-40 h-40 mb-4"
+          alt="TrendifyTube Logo"
+          className="mx-auto w-48 h-48 mb-6 drop-shadow-lg hover:scale-105 transition-transform duration-300"
         />
         <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-200">Trending Video</h1>
         <p className="text-gray-500 dark:text-gray-400 text-lg">🔥 Watch What's Hot. Shop What's Smarter.</p>
@@ -185,6 +130,8 @@ export default function TrendingVideo() {
             <option value="ko">Korean</option>
             <option value="ar">Arabic</option>
             <option value="hi">Hindi</option>
+            <option value="ha">Hausa</option>
+            <option value="ig">Igbo</option>
             <option value="yo">Yoruba</option>
           </select>
 
@@ -197,54 +144,64 @@ export default function TrendingVideo() {
           </button>
         </div>
 
-        {!isPremium && <div id="paypal-button-container" className="my-6"></div>}
+        {!isPremium && <div id="paypal-button-container" className="my-6 mx-auto"></div>}
         {isPremium && <div className="text-green-500 font-semibold mb-6">👑 Premium Features Unlocked!</div>}
       </header>
 
       {loading ? (
         <div className="text-center text-gray-600 dark:text-gray-300">Loading videos...</div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {videos.map((video, idx) => {
-            const locked = !isPremium && idx >= 3 // lock videos after first 3 for non-premium
+        <>
+          {!loading && videos.length === 0 ? (
+            <div className="text-center text-gray-600 dark:text-gray-300">
+              No videos found. Please check your API key or try a different region/language.
+            </div>
+          ) : null}
 
-            return (
-              <div
-                key={video.id}
-                className="relative bg-white dark:bg-gray-700 rounded-xl shadow-md overflow-hidden transition-colors duration-300"
-              >
-                {locked ? (
-                  <div className="flex items-center justify-center w-full h-60 bg-gray-300 dark:bg-gray-900 text-gray-800 dark:text-gray-200 font-bold text-lg">
-                    🔒 Subscribe to unlock
-                  </div>
-                ) : (
-                  <iframe
-                    className="w-full h-60"
-                    src={`https://www.youtube.com/embed/${video.id}`}
-                    title={video.snippet.title}
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                  ></iframe>
-                )}
+          {videos.length > 0 && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {videos.map((video, idx) => {
+                const locked = !isPremium && idx >= 3 // lock videos after first 3 for non-premium
 
-                <div className="p-4">
-                  <h2 className="text-lg font-semibold text-gray-700 dark:text-gray-200">{video.snippet.title}</h2>
-                  {!locked && (
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{video.snippet.channelTitle}</p>
-                  )}
-                  <a
-                    href={`https://www.amazon.com/s?k=${encodeURIComponent(video.snippet.title)}&tag=qualitygood0d-21`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="block mt-3 text-sm text-blue-600 hover:underline"
+                return (
+                  <div
+                    key={video.id}
+                    className="relative bg-white dark:bg-gray-700 rounded-xl shadow-md overflow-hidden transition-colors duration-300"
                   >
-                    Shop related products on Amazon
-                  </a>
-                </div>
-              </div>
-            )
-          })}
-        </div>
+                    {locked ? (
+                      <div className="flex items-center justify-center w-full h-60 bg-gray-300 dark:bg-gray-900 text-gray-800 dark:text-gray-200 font-bold text-lg">
+                        🔒 Subscribe to unlock
+                      </div>
+                    ) : (
+                      <iframe
+                        className="w-full h-60"
+                        src={`https://www.youtube.com/embed/${video.id}`}
+                        title={video.snippet.title}
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                      ></iframe>
+                    )}
+
+                    <div className="p-4">
+                      <h2 className="text-lg font-semibold text-gray-700 dark:text-gray-200">{video.snippet.title}</h2>
+                      {!locked && (
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{video.snippet.channelTitle}</p>
+                      )}
+                      <a
+                        href={`https://www.amazon.com/s?k=${encodeURIComponent(video.snippet.title)}&tag=qualitygood0d-21`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block mt-3 text-sm text-blue-600 hover:underline"
+                      >
+                        Shop related products on Amazon
+                      </a>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </>
       )}
     </div>
   )
