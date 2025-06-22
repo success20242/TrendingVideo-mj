@@ -144,7 +144,11 @@ export default function TrendingVideo() {
           </button>
         </div>
 
-        {!isPremium && <div id="paypal-button-container" className="my-6 mx-auto"></div>}
+        {!isPremium && (
+          <div className="flex justify-center">
+            <div id="paypal-button-container" className="my-6"></div>
+          </div>
+        )}
         {isPremium && <div className="text-green-500 font-semibold mb-6">👑 Premium Features Unlocked!</div>}
       </header>
 
