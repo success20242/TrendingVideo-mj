@@ -1,6 +1,6 @@
 import type React from "react"
 import type { Metadata } from "next"
-import Script from "next/script"
+import Script from "next/script" // This is the correct import for <Script>
 import "./globals.css"
 
 export const metadata: Metadata = {
