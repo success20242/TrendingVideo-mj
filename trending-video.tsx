@@ -197,7 +197,15 @@ export default function TrendingVideo() {
                         rel="noopener noreferrer"
                         className="block mt-3 text-sm text-blue-600 hover:underline"
                       >
-                        Shop related products on Amazon
+                        🛍️ Shop related products on Amazon
+                      </a>
+                      <a
+                        href="https://www.facebook.com/share/14E1rQ9My1r/"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block mt-1 text-sm text-green-600 hover:underline"
+                      >
+                        👞 Explore stylish shoes from 3Kings Boutique on Facebook
                       </a>
                     </div>
                   </div>
