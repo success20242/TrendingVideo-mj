@@ -1,15 +1,28 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <!-- Home Page -->
   <url>
     <loc>https://trendifyhub.vercel.app/</loc>
-    <priority>1.00</priority>
+    <lastmod>2025-06-23</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
   </url>
+
+  <!-- Privacy Policy -->
   <url>
     <loc>https://trendifyhub.vercel.app/privacy-policy</loc>
-    <priority>0.80</priority>
+    <lastmod>2025-06-23</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
   </url>
+
+  <!-- Terms & Conditions -->
   <url>
     <loc>https://trendifyhub.vercel.app/terms</loc>
-    <priority>0.80</priority>
+    <lastmod>2025-06-23</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
   </url>
+
+  <!-- Add more important URLs if needed -->
 </urlset>
