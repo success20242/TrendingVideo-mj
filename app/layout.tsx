@@ -6,18 +6,18 @@ import "./globals.css"
 export const metadata: Metadata = {
   title: "🔥 TrendifyTube - Viral Videos + Smart Shopping",
   description:
-    "Watch trending YouTube videos by country and unlock exclusive Amazon deals. Subscribe for premium access!",
+    "Watch trending YouTube videos by country and unlock exclusive Amazon & 3kings boutique deals. Subscribe for premium access!",
   generator: "v0.dev",
   viewport: "width=device-width, initial-scale=1",
   openGraph: {
     type: "website",
-    url: "https://trendify12.vercel.app",
+    url: "https://trendifyhub.vercel.app/",
     title: "🔥 TrendifyTube - Viral Videos + Smart Shopping",
     description:
-      "Watch trending YouTube videos by country and unlock exclusive Amazon deals. Subscribe for premium access!",
+      "Watch trending YouTube videos by country and unlock exclusive Amazon & 3kings boutique deals. Subscribe for premium access!",
     images: [
       {
-        url: "https://i.ibb.co/wZzWzBpJ/Colorful-Minimalist-Social-Community-Logo-removebg-preview.png",
+        url: "https://i.imgur.com/pAzcBnV.png",
         width: 600,
         height: 600,
         alt: "TrendifyTube Logo",
@@ -26,11 +26,11 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    site: "https://trendify12.vercel.app",
+    site: "https://trendifyhub.vercel.app/",
     title: "🔥 TrendifyTube - Viral Videos + Smart Shopping",
     description:
-      "Watch trending YouTube videos by country and unlock exclusive Amazon deals. Subscribe for premium access!",
-    images: ["https://i.ibb.co/wZzWzBpJ/Colorful-Minimalist-Social-Community-Logo-removebg-preview.png"],
+      "Watch trending YouTube videos by country and unlock exclusive Amazon & 3kings boutique deals. Subscribe for premium access!",
+    images: ["https://i.imgur.com/pAzcBnV.png"],
   },
   // New meta tag for article author
   article: {
@@ -54,7 +54,7 @@ export default function RootLayout({
             function gtag(){dataLayer.push(arguments);}
             gtag('js', new Date());
 
-            gtag('config', 'G-L6CN6PWBZ0');
+            gtag('config', 'G-L6CN6PWBZ0', { page_path: window.location.pathname });
           `}
         </Script>
       </head>
