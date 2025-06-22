@@ -4,7 +4,6 @@
   "private": true,
   "scripts": {
     "build": "next build",
-    "postbuild": "next-sitemap",
     "dev": "next dev",
     "lint": "next lint",
     "start": "next start"
@@ -48,7 +47,6 @@
     "input-otp": "latest",
     "lucide-react": "^0.454.0",
     "next": "15.2.4",
-    "next-sitemap": "^4.1.8",
     "next-themes": "latest",
     "react": "^19",
     "react-day-picker": "latest",
