@@ -1,71 +1,119 @@
 import type { Metadata } from "next"
 
 export const metadata: Metadata = {
-  title: "Terms & Conditions - TrendifyTube",
+  title: "Terms & Conditions | TrendifyTube",
+  description:
+    "Read our Terms & Conditions for TrendifyTube, covering Google Analytics, AdSense, affiliate links, CMP compliance and more.",
   robots: {
-    index: false,
-    follow: false,
+    index: true,
+    follow: true,
+  },
+  alternates: {
+    canonical: "https://trendifyhub.vercel.app/terms",
   },
 }
 
 export default function Terms() {
   return (
-    <div className="max-w-3xl mx-auto p-6">
-      <h1 className="text-3xl font-bold mb-4">Terms & Conditions</h1>
+    <div className="min-h-screen p-6 text-gray-800 dark:text-gray-200 bg-gray-50 dark:bg-gray-900">
+      <div className="max-w-4xl mx-auto">
+        <h1 className="text-3xl font-bold mb-6">📄 Terms and Conditions</h1>
 
-      <p className="mb-4">
-        Welcome to TrendifyTube! These terms and conditions outline the rules and regulations for the use of our
-        website, located at <strong>https://trendifyhub.vercel.app</strong>.
-      </p>
+        <p className="mb-4">
+          <strong>Effective Date:</strong> June 23, 2025
+        </p>
+        <p className="mb-4">
+          <strong>Website:</strong>{" "}
+          <a
+            href="https://trendifyhub.vercel.app"
+            className="text-blue-500 underline"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            https://trendifyhub.vercel.app
+          </a>
+        </p>
 
-      <p className="mb-4">
-        By accessing this website we assume you accept these terms and conditions. Do not continue to use TrendifyTube
-        if you do not agree to take all of the terms and conditions stated on this page.
-      </p>
+        <p className="mb-4">
+          Welcome to <strong>TrendifyTube</strong>. By accessing or using our website, you agree to the following Terms
+          and Conditions. Please read them carefully.
+        </p>
 
-      <h2 className="text-2xl font-semibold mt-6 mb-2">1. Use of the Website</h2>
-      <p className="mb-4">
-        You may browse and interact with content on TrendifyTube for personal, non-commercial use. We provide trending
-        YouTube video listings and affiliate links to online marketplaces such as Amazon and other featured stores.
-      </p>
+        <h2 className="text-2xl font-semibold mt-8 mb-2">1. Introduction</h2>
+        <p className="mb-4">
+          TrendifyTube provides access to trending YouTube videos by country, paired with smart shopping suggestions
+          including Amazon and 3Kings Boutique deals.
+        </p>
 
-      <h2 className="text-2xl font-semibold mt-6 mb-2">2. Intellectual Property</h2>
-      <p className="mb-4">
-        All content on this site, including text, logos, and graphics, is the property of TrendifyTube or its content
-        providers. Unauthorized use is strictly prohibited.
-      </p>
+        <h2 className="text-2xl font-semibold mt-8 mb-2">2. Acceptance of Terms</h2>
+        <p className="mb-4">
+          By accessing our website, you confirm that you accept these Terms and agree to comply with them.
+        </p>
 
-      <h2 className="text-2xl font-semibold mt-6 mb-2">3. Affiliate Disclosure</h2>
-      <p className="mb-4">
-        TrendifyTube uses affiliate links, including Amazon Associate links. This means we may earn a small commission
-        if you make a purchase through our links—at no extra cost to you.
-      </p>
+        <h2 className="text-2xl font-semibold mt-8 mb-2">3. Use of the Website</h2>
+        <ul className="list-disc list-inside mb-4">
+          <li>Do not misuse the site or attempt unauthorized access</li>
+          <li>Do not copy content without permission</li>
+        </ul>
 
-      <h2 className="text-2xl font-semibold mt-6 mb-2">4. User Conduct</h2>
-      <p className="mb-4">
-        You agree not to misuse the site or engage in activity that may harm TrendifyTube or other users. Spamming,
-        scraping, or reverse engineering is not allowed.
-      </p>
+        <h2 className="text-2xl font-semibold mt-8 mb-2">4. Affiliate Disclosure</h2>
+        <p className="mb-4">
+          We may earn commissions from purchases made through links to Amazon and 3Kings Boutique. These do not affect
+          your price.
+        </p>
 
-      <h2 className="text-2xl font-semibold mt-6 mb-2">5. Limitation of Liability</h2>
-      <p className="mb-4">
-        We do our best to ensure the accuracy and quality of our content, but we are not liable for any errors,
-        downtime, or actions taken based on content found on the site.
-      </p>
+        <h2 className="text-2xl font-semibold mt-8 mb-2">5. Analytics</h2>
+        <p className="mb-4">
+          We use Google Analytics to monitor traffic. You can opt out at{" "}
+          <a
+            href="https://tools.google.com/dlpage/gaoptout"
+            className="text-blue-500 underline"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Google’s opt-out page
+          </a>
+          .
+        </p>
 
-      <h2 className="text-2xl font-semibold mt-6 mb-2">6. External Links</h2>
-      <p className="mb-4">
-        Our site may link to external websites. We are not responsible for the content or privacy policies of those
-        sites.
-      </p>
+        <h2 className="text-2xl font-semibold mt-8 mb-2">6. Advertisements</h2>
+        <p className="mb-4">
+          We show ads via Google AdSense and comply with Google’s policies. Users from the EEA, UK, and Switzerland will
+          see a consent popup.
+        </p>
 
-      <h2 className="text-2xl font-semibold mt-6 mb-2">7. Updates to These Terms</h2>
-      <p className="mb-4">
-        We may update these Terms from time to time. Any changes will be posted here and will take effect immediately
-        upon posting.
-      </p>
+        <h2 className="text-2xl font-semibold mt-8 mb-2">7. Cookies & Consent</h2>
+        <p className="mb-4">
+          Cookies help us personalize and measure content and ads. You can manage preferences via our CMP popup or
+          browser settings.
+        </p>
 
-      <p className="text-sm text-gray-500 mt-8">Last updated: June 2025</p>
+        <h2 className="text-2xl font-semibold mt-8 mb-2">8. External Links</h2>
+        <p className="mb-4">
+          We’re not responsible for content or practices on third-party sites like YouTube, Amazon, or Facebook.
+        </p>
+
+        <h2 className="text-2xl font-semibold mt-8 mb-2">9. Intellectual Property</h2>
+        <p className="mb-4">
+          All content is owned by TrendifyTube or licensors. No copying without written permission.
+        </p>
+
+        <h2 className="text-2xl font-semibold mt-8 mb-2">10. Updates</h2>
+        <p className="mb-4">We may update these terms and will reflect changes on this page.</p>
+
+        <h2 className="text-2xl font-semibold mt-8 mb-2">11. Contact</h2>
+        <p className="mb-4">
+          Email:{" "}
+          <a href="mailto:qualitygoodsblog@gmail.com" className="text-blue-500 underline">
+            qualitygoodsblog@gmail.com
+          </a>
+        </p>
+
+        <h2 className="text-2xl font-semibold mt-8 mb-2">12. Jurisdiction</h2>
+        <p className="mb-4">
+          These Terms are governed by the laws of the United Arab Emirates or local laws if applicable.
+        </p>
+      </div>
     </div>
   )
 }
