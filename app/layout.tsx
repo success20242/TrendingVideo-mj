@@ -57,6 +57,13 @@ export default function RootLayout({
             gtag('config', 'G-L6CN6PWBZ0', { page_path: window.location.pathname });
           `}
         </Script>
+        {/* Google AdSense */}
+        <Script
+          async
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2261833870173099"
+          crossOrigin="anonymous"
+          strategy="afterInteractive"
+        />
       </head>
       <body>{children}</body>
     </html>
