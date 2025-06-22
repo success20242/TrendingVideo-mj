@@ -1,6 +1,6 @@
 import type React from "react"
 import type { Metadata } from "next"
-import Script from "next/script" // This is the correct import for <Script>
+import Script from "next/script"
 import "./globals.css"
 
 export const metadata: Metadata = {
@@ -35,6 +35,10 @@ export const metadata: Metadata = {
   // New meta tag for article author
   article: {
     authors: ["https://www.facebook.com/share/14E1rQ9My1r/"],
+  },
+  // Google AdSense verification meta tag
+  other: {
+    "google-adsense-account": "ca-pub-2261833870173099",
   },
 }
 
