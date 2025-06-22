@@ -68,6 +68,38 @@ export default function RootLayout({
           crossOrigin="anonymous"
           strategy="afterInteractive"
         />
+        {/* Cookie Consent CSS */}
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cookieconsent@3/build/cookieconsent.min.css" />
+        {/* Cookie Consent Script */}
+        <Script
+          async
+          src="https://cdn.jsdelivr.net/npm/cookieconsent@3/build/cookieconsent.min.js"
+          strategy="afterInteractive"
+        />
+        <Script id="cookie-consent-init" strategy="afterInteractive">
+          {`
+            window.addEventListener("load", function(){
+              window.cookieconsent.initialise({
+                palette: {
+                  popup: {
+                    background: "#000"
+                  },
+                  button: {
+                    background: "#f1d600"
+                  }
+                },
+                theme: "classic",
+                position: "bottom",
+                content: {
+                  message: "We use cookies to improve your experience. By using our site, you consent to cookies.",
+                  dismiss: "Accept",
+                  link: "Learn more",
+                  href: "/privacy-policy"
+                }
+              })
+            });
+          `}
+        </Script>
       </head>
       <body>{children}</body>
     </html>
