@@ -6,7 +6,7 @@ export async function GET(req: Request) {
   const country = searchParams.get("country") ?? "US"
   const lang = searchParams.get("lang") ?? "en"
   // Use YOUTUBE_API_KEY for server-side calls to keep it secure
-  const apiKey = "AIzaSyCFrrddr9RQq911gWauyne7v1EgmyAchdQ"
+  const apiKey = process.env.YOUTUBE_API_KEY
 
   if (!apiKey) {
     console.error("YouTube API Key (YOUTUBE_API_KEY) is not set.")

@@ -100,6 +100,7 @@ export default function RootLayout({
             });
           `}
         </Script>
+        <link rel="sitemap" type="application/xml" title="Sitemap" href="https://trendifyhub.vercel.app/api/sitemap" />
       </head>
       <body>{children}</body>
     </html>

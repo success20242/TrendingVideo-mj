@@ -1,4 +1,3 @@
 User-agent: *
 Allow: /
-
-Sitemap: https://trendifyhub.vercel.app/sitemap.xml
+Sitemap: https://trendifyhub.vercel.app/api/sitemap
