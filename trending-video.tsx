@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import axios from "axios"
+import Footer from "@/components/footer"
 
 export default function TrendingVideo() {
   const [videos, setVideos] = useState([])
@@ -81,7 +82,7 @@ export default function TrendingVideo() {
   }, [])
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-700 p-6 transition-colors duration-300">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-700 px-6 pt-6 pb-20 transition-colors duration-300">
       <header className="text-center mb-8 max-w-5xl mx-auto">
         <img
           src="https://i.ibb.co/wZzWzBpJ/Colorful-Minimalist-Social-Community-Logo-removebg-preview.png"
@@ -232,19 +233,7 @@ export default function TrendingVideo() {
         </a>
       </section>
 
-      <footer className="mt-12 text-center text-sm text-gray-500 dark:text-gray-400">
-        <p>
-          🔗 Visit our trusted fashion partner:{" "}
-          <a
-            href="https://www.facebook.com/share/14E1rQ9My1r/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-blue-600 hover:underline"
-          >
-            3Kings Boutique on Facebook
-          </a>
-        </p>
-      </footer>
+      <Footer />
     </div>
   )
 }
