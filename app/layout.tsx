@@ -43,13 +43,13 @@ export default function RootLayout({
     <html lang="en">
       <head>
         {/* Google Analytics */}
-        <Script src="https://www.googletagmanager.com/gtag/js?id=G-968KK8V6LJ" strategy="afterInteractive" />
+        <Script src="https://www.googletagmanager.com/gtag/js?id=G-9MMSJHGT3W" strategy="afterInteractive" />
         <Script id="google-analytics" strategy="afterInteractive">
           {`
             window.dataLayer = window.dataLayer || [];
             function gtag(){dataLayer.push(arguments);}
             gtag('js', new Date());
-            gtag('config', 'G-968KK8V6LJ', {
+            gtag('config', 'G-9MMSJHGT3W', {
               page_path: window.location.pathname,
             });
           `}
