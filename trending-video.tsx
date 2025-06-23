@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react"
 import axios from "axios"
 import Footer from "@/components/footer"
+import { useSession, signOut } from "next-auth/react" // Add this import
+import Link from "next/link"
 
 export default function TrendingVideo() {
   const [videos, setVideos] = useState([])
@@ -10,18 +12,19 @@ export default function TrendingVideo() {
   const [selectedCountry, setSelectedCountry] = useState("US")
   const [selectedLanguage, setSelectedLanguage] = useState("en")
   const [darkMode, setDarkMode] = useState(false)
-  const [isPremium, setIsPremium] = useState(false)
 
-  // Load dark mode preference & premium status on mount
+  // Use useSession to get user's session data
+  const { data: session, status } = useSession()
+  const isPremium = session?.user?.subscriptionStatus === "active"
+  const isOwner = session?.user?.role === "admin" // Assuming 'admin' role for owner
+
+  // Load dark mode preference on mount
   useEffect(() => {
     const savedMode = localStorage.getItem("darkMode")
     if (savedMode === "true") {
       setDarkMode(true)
       document.documentElement.classList.add("dark")
     }
-
-    const premiumStatus = localStorage.getItem("isPremium") === "true"
-    setIsPremium(premiumStatus)
   }, [])
 
   // Toggle dark mode & save preference
@@ -56,30 +59,6 @@ export default function TrendingVideo() {
 
     fetchTrendingVideos()
   }, [selectedCountry, selectedLanguage])
-
-  useEffect(() => {
-    const script = document.createElement("script")
-    script.src = `https://www.paypal.com/sdk/js?client-id=${process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID}&vault=true&intent=subscription`
-    script.async = true
-    script.onload = () => {
-      if (window.paypal) {
-        window.paypal
-          .Buttons({
-            createSubscription: (data, actions) =>
-              actions.subscription.create({
-                plan_id: process.env.NEXT_PUBLIC_PAYPAL_PLAN_ID,
-              }),
-            onApprove: (data) => {
-              alert("Subscription completed! ID: " + data.subscriptionID)
-              localStorage.setItem("isPremium", "true")
-              setIsPremium(true) // update state instantly
-            },
-          })
-          .render("#paypal-button-container")
-      }
-    }
-    document.body.appendChild(script)
-  }, [])
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-700 px-6 pt-6 pb-20 transition-colors duration-300">
@@ -144,14 +123,45 @@ export default function TrendingVideo() {
           >
             {darkMode ? "🌙 Dark Mode" : "☀️ Light Mode"}
           </button>
+          {status === "authenticated" ? (
+            <>
+              <Link
+                href="/profile"
+                className="ml-4 px-4 py-2 rounded bg-blue-600 dark:bg-blue-700 text-white font-semibold hover:bg-blue-700 dark:hover:bg-blue-800 transition"
+              >
+                My Profile
+              </Link>
+              <button
+                onClick={() => signOut({ callbackUrl: "/login" })}
+                className="ml-4 px-4 py-2 rounded bg-red-600 dark:bg-red-700 text-white font-semibold hover:bg-red-700 dark:hover:bg-red-800 transition"
+              >
+                Logout
+              </button>
+            </>
+          ) : (
+            <Link
+              href="/login"
+              className="ml-4 px-4 py-2 rounded bg-green-600 dark:bg-green-700 text-white font-semibold hover:bg-green-700 dark:hover:bg-green-800 transition"
+            >
+              Login
+            </Link>
+          )}
         </div>
 
-        {!isPremium && (
-          <div className="flex justify-center">
-            <div id="paypal-button-container" className="my-6"></div>
-          </div>
+        {status === "loading" ? (
+          <div className="text-gray-500 dark:text-gray-400 text-center my-6">Checking subscription status...</div>
+        ) : (
+          <>
+            {!isPremium && !isOwner && (
+              <div className="flex justify-center">
+                <div id="paypal-button-container" className="my-6"></div>
+              </div>
+            )}
+            {(isPremium || isOwner) && (
+              <div className="text-green-500 font-semibold mb-6">👑 Premium Features Unlocked!</div>
+            )}
+          </>
         )}
-        {isPremium && <div className="text-green-500 font-semibold mb-6">👑 Premium Features Unlocked!</div>}
       </header>
 
       {loading ? (
