@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation"
 import { fetchVideoDetails } from "@/lib/youtube"
 import type { Metadata } from "next"
+import VideoPlayerWithAccessControl from "@/components/video-player-with-access-control"
 
 interface WatchPageProps {
   params: {
@@ -70,14 +71,7 @@ export default async function WatchPage({ params }: WatchPageProps) {
     <main className="max-w-4xl mx-auto p-6 bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200 min-h-screen">
       <h1 className="text-3xl font-bold mb-4">{video.snippet.title}</h1>
       <div className="aspect-video w-full mb-6">
-        <iframe
-          className="w-full h-full rounded-lg shadow-lg"
-          src={`https://www.youtube.com/embed/${videoId}`}
-          title={video.snippet.title}
-          frameBorder="0"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          allowFullScreen
-        ></iframe>
+        <VideoPlayerWithAccessControl videoId={videoId} title={video.snippet.title} />
       </div>
       <p className="text-gray-600 dark:text-gray-300 mb-4">{video.snippet.description}</p>
       <p className="text-sm text-gray-500 dark:text-gray-400">
