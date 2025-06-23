@@ -1,30 +1,24 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useSession } from "next-auth/react"
-import { useRouter } from "next/navigation" // Use next/navigation for App Router
+// Removed useSession and useRouter imports as authentication is removed
+// import { useSession } from "next-auth/react"
+// import { useRouter } from "next/navigation"
 
 export default function PayPalButtonClient() {
-  const { data: session, status } = useSession()
-  const router = useRouter()
+  // Removed useSession and useRouter hooks
+  // const { data: session, status } = useSession()
+  // const router = useRouter()
   const [paypalLoaded, setPaypalLoaded] = useState(false)
 
-  useEffect(() => {
-    // Redirect if already subscribed or admin
-    if (
-      status === "authenticated" &&
-      (session?.user?.subscriptionStatus === "active" || session?.user?.role === "admin")
-    ) {
-      // No need to redirect if already on the main page and subscribed
-      return
-    }
+  // isPremium is now a client-side state, not backed by any authentication or backend.
+  // It will be managed via localStorage for demonstration.
+  const [isPremium, setIsPremium] = useState(false)
 
-    // Only load PayPal SDK if not already loaded and user is not premium/owner
-    if (
-      !paypalLoaded &&
-      status === "authenticated" &&
-      !(session?.user?.subscriptionStatus === "active" || session?.user?.role === "admin")
-    ) {
+  useEffect(() => {
+    // Load PayPal SDK if not already loaded
+    // No session check needed as authentication is removed
+    if (!paypalLoaded) {
       const script = document.createElement("script")
       script.src = `https://www.paypal.com/sdk/js?client-id=${process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID}&vault=true&intent=subscription`
       script.async = true
@@ -40,8 +34,9 @@ export default function PayPalButtonClient() {
               },
               onApprove: (data, actions) => {
                 alert("Subscription completed! Your access will be updated shortly.")
-                // Refresh session or redirect after a short delay
-                router.refresh() // Refresh the current route to update session status
+                // Set client-side premium status
+                localStorage.setItem("isPremium", "true")
+                setIsPremium(true)
               },
               onError: (err) => {
                 console.error("PayPal error:", err)
@@ -60,16 +55,19 @@ export default function PayPalButtonClient() {
         }
       }
     }
-  }, [session, status, paypalLoaded, router])
+  }, [paypalLoaded]) // Removed session, status from dependency array
 
-  if (status === "loading") {
-    return <div className="text-gray-500 dark:text-gray-400 text-center my-6">Checking subscription status...</div>
-  }
+  // Simulate premium status for demonstration purposes
+  useEffect(() => {
+    // This will now be the only source for isPremium status
+    setIsPremium(localStorage.getItem("isPremium") === "true")
+  }, [])
 
-  if (session?.user?.subscriptionStatus === "active" || session?.user?.role === "admin") {
+  if (isPremium) {
     return <div className="text-green-500 font-semibold mb-6">👑 Premium Features Unlocked!</div>
   }
 
+  // Always show the PayPal button if not premium
   return (
     <div className="flex justify-center">
       <div id="paypal-button-container" className="my-6"></div>

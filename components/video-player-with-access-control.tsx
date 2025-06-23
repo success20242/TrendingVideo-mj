@@ -1,6 +1,8 @@
 "use client"
 
 import { useEffect, useState } from "react"
+// Removed useSession import as authentication is removed
+// import { useSession } from "next-auth/react"
 
 interface VideoPlayerProps {
   videoId: string
@@ -9,20 +11,14 @@ interface VideoPlayerProps {
 
 export default function VideoPlayerWithAccessControl({ videoId, title }: VideoPlayerProps) {
   const [isPremium, setIsPremium] = useState(false)
-  const [isOwner, setIsOwner] = useState(false) // New state for owner status
   const [loadingStatus, setLoadingStatus] = useState(true)
 
   useEffect(() => {
     // Check localStorage for premium status
+    // In a real application, this would typically come from a secure server-side check
+    // after user authentication, not directly from localStorage.
     const premiumStatus = localStorage.getItem("isPremium") === "true"
     setIsPremium(premiumStatus)
-
-    // Check for owner environment variable
-    // In a real application, this would typically come from a secure server-side check
-    // after user authentication, not directly from a public env var.
-    // For demonstration, we're using a public env var.
-    const ownerStatus = process.env.NEXT_PUBLIC_IS_OWNER === "true"
-    setIsOwner(ownerStatus)
 
     setLoadingStatus(false)
   }, [])
@@ -37,7 +33,7 @@ export default function VideoPlayerWithAccessControl({ videoId, title }: VideoPl
 
   return (
     <div id="video-wrapper" className="aspect-video w-full mb-6">
-      {isPremium || isOwner ? ( // Check if premium OR owner
+      {isPremium ? ( // Only check if premium
         <iframe
           className="w-full h-full rounded-lg shadow-lg"
           src={`https://www.youtube.com/embed/${videoId}`}
@@ -51,7 +47,11 @@ export default function VideoPlayerWithAccessControl({ videoId, title }: VideoPl
           <p className="mb-4">🔒 This content is locked.</p>
           <p>
             Please{" "}
-            <a href="/" className="text-blue-500 hover:underline">
+            <a
+              href="#"
+              onClick={() => localStorage.setItem("isPremium", "true")}
+              className="text-blue-500 hover:underline"
+            >
               subscribe
             </a>{" "}
             to gain access.

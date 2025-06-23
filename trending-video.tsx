@@ -3,9 +3,9 @@
 import { useEffect, useState } from "react"
 import axios from "axios"
 import Footer from "@/components/footer"
-import { useSession, signOut } from "next-auth/react" // Add this import
-import Link from "next/link"
-// Import the new PayPalButtonClient component
+// Removed useSession, signOut, Link imports as authentication is removed
+// import { useSession, signOut } from "next-auth/react"
+// import Link from "next/link"
 import PayPalButtonClient from "@/components/paypal-button-client"
 
 export default function TrendingVideo() {
@@ -15,10 +15,9 @@ export default function TrendingVideo() {
   const [selectedLanguage, setSelectedLanguage] = useState("en")
   const [darkMode, setDarkMode] = useState(false)
 
-  // Use useSession to get user's session data
-  const { data: session, status } = useSession()
-  const isPremium = session?.user?.subscriptionStatus === "active"
-  const isOwner = session?.user?.role === "admin" // Assuming 'admin' role for owner
+  // isPremium is now a client-side state, not backed by any authentication or backend.
+  // It will be managed via localStorage for demonstration.
+  const [isPremium, setIsPremium] = useState(false)
 
   // Load dark mode preference on mount
   useEffect(() => {
@@ -45,7 +44,7 @@ export default function TrendingVideo() {
 
   useEffect(() => {
     const fetchTrendingVideos = async () => {
-      setLoading(true) // Set loading to true before fetching
+      setLoading(true)
       try {
         const response = await axios.get("/api/trending", {
           params: { country: selectedCountry, lang: selectedLanguage },
@@ -53,14 +52,20 @@ export default function TrendingVideo() {
         setVideos(Array.isArray(response.data.items) ? response.data.items : [])
       } catch (error) {
         console.error("Error fetching trending videos:", error)
-        setVideos([]) // Ensure videos is an empty array on error
+        setVideos([])
       } finally {
-        setLoading(false) // Always set loading to false after attempt
+        setLoading(false)
       }
     }
 
     fetchTrendingVideos()
   }, [selectedCountry, selectedLanguage])
+
+  // Simulate premium status for demonstration purposes
+  useEffect(() => {
+    // This will now be the only source for isPremium status
+    setIsPremium(localStorage.getItem("isPremium") === "true")
+  }, [])
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-700 px-6 pt-6 pb-20 transition-colors duration-300">
@@ -82,7 +87,7 @@ export default function TrendingVideo() {
             <option value="US">United States</option>
             <option value="CA">Canada</option>
             <option value="GB">United Kingdom</option>
-            <option value="AE">United Arab Emirates</option> {/* Added UAE */}
+            <option value="AE">United Arab Emirates</option>
             <option value="NG">Nigeria</option>
             <option value="IN">India</option>
             <option value="FR">France</option>
@@ -125,29 +130,7 @@ export default function TrendingVideo() {
           >
             {darkMode ? "🌙 Dark Mode" : "☀️ Light Mode"}
           </button>
-          {status === "authenticated" ? (
-            <>
-              <Link
-                href="/profile"
-                className="ml-4 px-4 py-2 rounded bg-blue-600 dark:bg-blue-700 text-white font-semibold hover:bg-blue-700 dark:hover:bg-blue-800 transition"
-              >
-                My Profile
-              </Link>
-              <button
-                onClick={() => signOut({ callbackUrl: "/login" })}
-                className="ml-4 px-4 py-2 rounded bg-red-600 dark:bg-red-700 text-white font-semibold hover:bg-red-700 dark:hover:bg-red-800 transition"
-              >
-                Logout
-              </button>
-            </>
-          ) : (
-            <Link
-              href="/login"
-              className="ml-4 px-4 py-2 rounded bg-green-600 dark:bg-green-700 text-white font-semibold hover:bg-green-700 dark:hover:bg-green-800 transition"
-            >
-              Login
-            </Link>
-          )}
+          {/* Removed Login/Logout/Profile links as authentication is removed */}
         </div>
 
         <PayPalButtonClient />
@@ -166,7 +149,8 @@ export default function TrendingVideo() {
           {videos.length > 0 && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {videos.map((video, idx) => {
-                const locked = !isPremium && idx >= 3 // lock videos after first 3 for non-premium
+                // Video locking is now purely based on client-side isPremium state
+                const locked = !isPremium && idx >= 3
 
                 return (
                   <div
