@@ -3,10 +3,6 @@
 import { useEffect, useState } from "react"
 import axios from "axios"
 import Footer from "@/components/footer"
-// Removed useSession, signOut, Link imports as authentication is removed
-// import { useSession, signOut } from "next-auth/react"
-// import Link from "next/link"
-import PayPalButtonClient from "@/components/paypal-button-client"
 
 export default function TrendingVideo() {
   const [videos, setVideos] = useState([])
@@ -14,9 +10,6 @@ export default function TrendingVideo() {
   const [selectedCountry, setSelectedCountry] = useState("US")
   const [selectedLanguage, setSelectedLanguage] = useState("en")
   const [darkMode, setDarkMode] = useState(false)
-
-  // isPremium is now a client-side state, not backed by any authentication or backend.
-  // It will be managed via localStorage for demonstration.
   const [isPremium, setIsPremium] = useState(false)
 
   // Load dark mode preference on mount
@@ -26,6 +19,9 @@ export default function TrendingVideo() {
       setDarkMode(true)
       document.documentElement.classList.add("dark")
     }
+
+    // Load premium status
+    setIsPremium(localStorage.getItem("isPremium") === "true")
   }, [])
 
   // Toggle dark mode & save preference
@@ -37,8 +33,17 @@ export default function TrendingVideo() {
       } else {
         document.documentElement.classList.remove("dark")
       }
-      localStorage.setItem("darkMode", newMode)
+      localStorage.setItem("darkMode", String(newMode))
       return newMode
+    })
+  }
+
+  // Toggle premium status for testing
+  const togglePremium = () => {
+    setIsPremium((prev) => {
+      const newStatus = !prev
+      localStorage.setItem("isPremium", String(newStatus))
+      return newStatus
     })
   }
 
@@ -60,12 +65,6 @@ export default function TrendingVideo() {
 
     fetchTrendingVideos()
   }, [selectedCountry, selectedLanguage])
-
-  // Simulate premium status for demonstration purposes
-  useEffect(() => {
-    // This will now be the only source for isPremium status
-    setIsPremium(localStorage.getItem("isPremium") === "true")
-  }, [])
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-700 px-6 pt-6 pb-20 transition-colors duration-300">
@@ -125,15 +124,23 @@ export default function TrendingVideo() {
 
           <button
             onClick={toggleDarkMode}
-            className="ml-4 px-4 py-2 rounded bg-yellow-400 dark:bg-yellow-600 text-gray-900 dark:text-gray-100 font-semibold hover:bg-yellow-500 dark:hover:bg-yellow-700 transition"
+            className="px-4 py-2 rounded bg-yellow-400 dark:bg-yellow-600 text-gray-900 dark:text-gray-100 font-semibold hover:bg-yellow-500 dark:hover:bg-yellow-700 transition"
             aria-label="Toggle dark mode"
           >
             {darkMode ? "🌙 Dark Mode" : "☀️ Light Mode"}
           </button>
-          {/* Removed Login/Logout/Profile links as authentication is removed */}
+
+          {/* Premium toggle for testing */}
+          <button
+            onClick={togglePremium}
+            className="px-4 py-2 rounded bg-purple-500 text-white font-semibold hover:bg-purple-600 transition"
+          >
+            {isPremium ? "👑 Premium Active" : "🔓 Activate Premium"}
+          </button>
         </div>
 
-        <PayPalButtonClient />
+        {/* Premium status indicator */}
+        {isPremium && <div className="text-green-500 font-semibold mb-6">👑 Premium Features Unlocked!</div>}
       </header>
 
       {loading ? (

@@ -1,8 +1,6 @@
 "use client"
 
 import { useEffect, useState } from "react"
-// Removed useSession import as authentication is removed
-// import { useSession } from "next-auth/react"
 
 interface VideoPlayerProps {
   videoId: string
@@ -15,11 +13,8 @@ export default function VideoPlayerWithAccessControl({ videoId, title }: VideoPl
 
   useEffect(() => {
     // Check localStorage for premium status
-    // In a real application, this would typically come from a secure server-side check
-    // after user authentication, not directly from localStorage.
     const premiumStatus = localStorage.getItem("isPremium") === "true"
     setIsPremium(premiumStatus)
-
     setLoadingStatus(false)
   }, [])
 
@@ -33,7 +28,7 @@ export default function VideoPlayerWithAccessControl({ videoId, title }: VideoPl
 
   return (
     <div id="video-wrapper" className="aspect-video w-full mb-6">
-      {isPremium ? ( // Only check if premium
+      {isPremium ? (
         <iframe
           className="w-full h-full rounded-lg shadow-lg"
           src={`https://www.youtube.com/embed/${videoId}`}
@@ -45,17 +40,15 @@ export default function VideoPlayerWithAccessControl({ videoId, title }: VideoPl
       ) : (
         <div className="flex flex-col items-center justify-center w-full h-60 bg-gray-300 dark:bg-gray-900 text-gray-800 dark:text-gray-200 font-bold text-lg rounded-lg">
           <p className="mb-4">🔒 This content is locked.</p>
-          <p>
-            Please{" "}
-            <a
-              href="#"
-              onClick={() => localStorage.setItem("isPremium", "true")}
-              className="text-blue-500 hover:underline"
-            >
-              subscribe
-            </a>{" "}
-            to gain access.
-          </p>
+          <button
+            onClick={() => {
+              localStorage.setItem("isPremium", "true")
+              setIsPremium(true)
+            }}
+            className="px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600"
+          >
+            Unlock Premium Content
+          </button>
         </div>
       )}
     </div>
