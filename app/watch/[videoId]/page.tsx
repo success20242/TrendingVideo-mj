@@ -88,17 +88,26 @@ export default async function WatchPage({ params }: WatchPageProps) {
 
   // Structured data for VideoObject
   const videoStructuredData = {
-    "@context": "http://schema.org",
+    "@context": "https://schema.org",
     "@type": "VideoObject",
     name: title,
     description: description,
-    thumbnailUrl: thumbnailUrl,
+    thumbnailUrl: [thumbnailUrl], // Changed to array
     uploadDate: uploadDate,
     embedUrl: `https://www.youtube.com/embed/${params.videoId}`,
-    contentUrl: `https://trendifyhub.vercel.app/watch/${params.videoId}`,
+    contentUrl: `https://trendifyhub.vercel.app/watch/${params.videoId}`, // Keeping canonical URL for contentUrl
     duration: "PT1M30S", // Placeholder: You might need to fetch actual duration if available
     interactionCount: "0", // Placeholder: You might need to fetch actual view count
     expires: "2029-12-31T23:59:59+00:00", // Placeholder: Set an appropriate expiry date
+    publisher: {
+      // Added publisher information
+      "@type": "Organization",
+      name: "TrendifyTube",
+      logo: {
+        "@type": "ImageObject",
+        url: "https://trendifyhub.vercel.app/logo.png", // Ensure this path is correct
+      },
+    },
   }
 
   return (
