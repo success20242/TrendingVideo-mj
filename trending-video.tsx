@@ -5,6 +5,8 @@ import axios from "axios"
 import Footer from "@/components/footer"
 import { useSession, signOut } from "next-auth/react" // Add this import
 import Link from "next/link"
+// Import the new PayPalButtonClient component
+import PayPalButtonClient from "@/components/paypal-button-client"
 
 export default function TrendingVideo() {
   const [videos, setVideos] = useState([])
@@ -148,20 +150,7 @@ export default function TrendingVideo() {
           )}
         </div>
 
-        {status === "loading" ? (
-          <div className="text-gray-500 dark:text-gray-400 text-center my-6">Checking subscription status...</div>
-        ) : (
-          <>
-            {!isPremium && !isOwner && (
-              <div className="flex justify-center">
-                <div id="paypal-button-container" className="my-6"></div>
-              </div>
-            )}
-            {(isPremium || isOwner) && (
-              <div className="text-green-500 font-semibold mb-6">👑 Premium Features Unlocked!</div>
-            )}
-          </>
-        )}
+        <PayPalButtonClient />
       </header>
 
       {loading ? (
