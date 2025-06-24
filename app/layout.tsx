@@ -13,9 +13,14 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  const googleCseId = process.env.NEXT_PUBLIC_CSE_ID
+
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        {children}
+        {googleCseId && <script async src={`https://cse.google.com/cse.js?cx=${googleCseId}`}></script>}
+      </body>
     </html>
   )
 }

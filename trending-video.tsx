@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import axios from "axios"
 import Footer from "@/components/footer"
+import GoogleSearchEmbed from "@/components/google-search-embed"
 
 export default function TrendingVideo() {
   const [videos, setVideos] = useState([])
@@ -142,6 +143,8 @@ export default function TrendingVideo() {
         {/* Premium status indicator */}
         {isPremium && <div className="text-green-500 font-semibold mb-6">👑 Premium Features Unlocked!</div>}
       </header>
+
+      <GoogleSearchEmbed />
 
       {loading ? (
         <div className="text-center text-gray-600 dark:text-gray-300">Loading videos...</div>

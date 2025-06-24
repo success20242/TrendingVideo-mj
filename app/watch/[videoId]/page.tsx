@@ -2,7 +2,7 @@ import { notFound } from "next/navigation"
 import { fetchVideoDetails } from "@/lib/youtube"
 import type { Metadata } from "next"
 import VideoPlayerWithAccessControl from "@/components/video-player-with-access-control"
-import { Sidebar, SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
+import { Sidebar, SidebarProvider } from "@/components/ui/sidebar"
 import { AffiliateSidebar } from "@/components/affiliate-sidebar"
 
 interface WatchPageProps {
@@ -77,7 +77,8 @@ export default async function WatchPage({ params }: WatchPageProps) {
       <Sidebar side="right" collapsible="none" variant="sidebar">
         <AffiliateSidebar videoTitle={videoTitle} videoTags={videoTags} />
       </Sidebar>
-      <SidebarInset>
+      {/* The main content should be a sibling to the Sidebar, wrapped in a flex-1 container */}
+      <div className="flex-1">
         <main className="max-w-4xl mx-auto p-6 bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200 min-h-screen">
           <h1 className="text-3xl font-bold mb-4">{video.snippet.title}</h1>
           <div className="aspect-video w-full mb-6">
@@ -89,7 +90,7 @@ export default async function WatchPage({ params }: WatchPageProps) {
             {new Date(video.snippet.publishedAt).toLocaleDateString()}
           </p>
         </main>
-      </SidebarInset>
+      </div>
     </SidebarProvider>
   )
 }
