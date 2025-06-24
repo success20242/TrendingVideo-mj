@@ -2,6 +2,8 @@ import { notFound } from "next/navigation"
 import { fetchVideoDetails } from "@/lib/youtube"
 import type { Metadata } from "next"
 import VideoPlayerWithAccessControl from "@/components/video-player-with-access-control"
+import { Sidebar, SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
+import { AffiliateSidebar } from "@/components/affiliate-sidebar"
 
 interface WatchPageProps {
   params: {
@@ -67,16 +69,27 @@ export default async function WatchPage({ params }: WatchPageProps) {
     notFound() // Renders Next.js's default 404 page
   }
 
+  const videoTitle = video.snippet.title
+  const videoTags = video.snippet.tags || []
+
   return (
-    <main className="max-w-4xl mx-auto p-6 bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200 min-h-screen">
-      <h1 className="text-3xl font-bold mb-4">{video.snippet.title}</h1>
-      <div className="aspect-video w-full mb-6">
-        <VideoPlayerWithAccessControl videoId={videoId} title={video.snippet.title} />
-      </div>
-      <p className="text-gray-600 dark:text-gray-300 mb-4">{video.snippet.description}</p>
-      <p className="text-sm text-gray-500 dark:text-gray-400">
-        Channel: {video.snippet.channelTitle} | Published: {new Date(video.snippet.publishedAt).toLocaleDateString()}
-      </p>
-    </main>
+    <SidebarProvider defaultOpen={true}>
+      <Sidebar side="right" collapsible="none" variant="sidebar">
+        <AffiliateSidebar videoTitle={videoTitle} videoTags={videoTags} />
+      </Sidebar>
+      <SidebarInset>
+        <main className="max-w-4xl mx-auto p-6 bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200 min-h-screen">
+          <h1 className="text-3xl font-bold mb-4">{video.snippet.title}</h1>
+          <div className="aspect-video w-full mb-6">
+            <VideoPlayerWithAccessControl videoId={videoId} title={video.snippet.title} />
+          </div>
+          <p className="text-gray-600 dark:text-gray-300 mb-4">{video.snippet.description}</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            Channel: {video.snippet.channelTitle} | Published:{" "}
+            {new Date(video.snippet.publishedAt).toLocaleDateString()}
+          </p>
+        </main>
+      </SidebarInset>
+    </SidebarProvider>
   )
 }
