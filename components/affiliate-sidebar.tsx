@@ -32,23 +32,42 @@ interface Product {
 export function AffiliateSidebar({ videoTitle, videoTags }: AffiliateSidebarProps) {
   const [searchQuery, setSearchQuery] = React.useState(videoTitle || videoTags[0] || "")
   const [products, setProducts] = React.useState<Product[]>([])
+  const [cachedQuery, setCachedQuery] = React.useState("")
   const [loading, setLoading] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
 
-  const handleSearch = React.useCallback(async (query: string) => {
-    setLoading(true)
-    setError(null)
-    try {
-      const results = await searchAffiliateProducts(query)
-      setProducts(results)
-    } catch (err) {
-      console.error("Error fetching affiliate products:", err)
-      setError("Failed to fetch products. Please try again later.")
-      setProducts([])
-    } finally {
-      setLoading(false)
-    }
-  }, [])
+  const handleSearch = React.useCallback(
+    async (query: string) => {
+      if (!query || query === cachedQuery) return // Prevent redundant searches
+
+      setLoading(true)
+      setError(null)
+
+      // Try to load from cache first
+      const cached = localStorage.getItem(`affiliate_${query}`)
+      if (cached) {
+        setProducts(JSON.parse(cached))
+        setCachedQuery(query)
+        setLoading(false)
+        return
+      }
+
+      try {
+        // Use the existing server action to fetch products
+        const results = await searchAffiliateProducts(query)
+        setProducts(results)
+        setCachedQuery(query)
+        localStorage.setItem(`affiliate_${query}`, JSON.stringify(results)) // Cache the results
+      } catch (err) {
+        console.error("Error fetching affiliate products:", err)
+        setError("Failed to fetch products. Please try again later.")
+        setProducts([])
+      } finally {
+        setLoading(false)
+      }
+    },
+    [cachedQuery],
+  ) // Include cachedQuery in dependency array
 
   React.useEffect(() => {
     if (videoTitle || videoTags.length > 0) {
@@ -97,7 +116,7 @@ export function AffiliateSidebar({ videoTitle, videoTags }: AffiliateSidebarProp
                       <CardContent className="p-2 flex items-center gap-3">
                         {product.imageUrl && (
                           <img
-                            src={product.imageUrl || "/placeholder.svg"}
+                            src={product.imageUrl || "/placeholder.svg?height=64&width=64"}
                             alt={product.title}
                             className="w-16 h-16 object-cover rounded-md"
                           />
@@ -113,7 +132,7 @@ export function AffiliateSidebar({ videoTitle, videoTags }: AffiliateSidebarProp
                           >
                             View on {product.source}
                           </a>
-                          {product.isSponsored && (
+                          {(product.isSponsored || product.source === "Google Search") && (
                             <span className="text-xs text-gray-500 dark:text-gray-400 mt-1 block">Sponsored</span>
                           )}
                         </div>
@@ -126,6 +145,7 @@ export function AffiliateSidebar({ videoTitle, videoTags }: AffiliateSidebarProp
           </SidebarGroup>
         )}
       </SidebarContent>
+      <p className="mt-6 text-xs text-gray-500 italic p-2">As an affiliate, we may earn from qualifying purchases.</p>
     </div>
   )
 }
