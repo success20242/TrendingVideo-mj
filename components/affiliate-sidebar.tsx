@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { searchAffiliateProducts } from "@/app/actions/affiliate-search"
+// Removed direct import of searchAffiliateProducts as it's a server action
 import { Card, CardContent } from "@/components/ui/card"
 import { SidebarHeader, SidebarContent } from "@/components/ui/sidebar"
 
@@ -22,19 +22,31 @@ export function AffiliateSidebar({ videoTitle, videoTags }: { videoTitle: string
 
   useEffect(() => {
     const queryToUse = videoTitle || videoTags[0] || ""
-    if (!queryToUse) return
+    if (!queryToUse) {
+      setProducts([])
+      setLoading(false)
+      return
+    }
 
     const cacheKey = `affiliate_${queryToUse}`
     const cached = localStorage.getItem(cacheKey)
 
     if (cached) {
       setProducts(JSON.parse(cached))
+      setLoading(false)
       return
     }
 
     setLoading(true)
     setError(null)
-    searchAffiliateProducts(queryToUse)
+    // Fetch from the new API route
+    fetch(`/api/affiliate-search?query=${encodeURIComponent(queryToUse)}`)
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`)
+        }
+        return res.json()
+      })
       .then((res) => {
         setProducts(res)
         localStorage.setItem(cacheKey, JSON.stringify(res))

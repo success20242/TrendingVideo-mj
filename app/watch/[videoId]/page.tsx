@@ -72,6 +72,9 @@ export default async function WatchPage({ params }: WatchPageProps) {
   const videoTitle = video.snippet.title
   const videoTags = video.snippet.tags || []
 
+  // Debugging: Log the props being passed to AffiliateSidebar
+  console.log("AffiliateSidebar props - videoTitle:", videoTitle, "videoTags:", videoTags)
+
   return (
     <SidebarProvider defaultOpen={true}>
       <Sidebar side="right" collapsible="none" variant="sidebar">

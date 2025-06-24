@@ -15,7 +15,7 @@ export async function searchAffiliateProducts(query: string): Promise<Product[]>
 
   // 1. Google Custom Search API
   const googleApiKey = process.env.GOOGLE_CSE_API_KEY
-  const googleEngineId = process.env.NEXT_PUBLIC_CSE_ID // Updated to NEXT_PUBLIC_CSE_ID
+  const googleEngineId = process.env.GOOGLE_CSE_ENGINE_ID // Reverted to non-public for server action
 
   if (googleApiKey && googleEngineId) {
     const googleSearchUrl = `https://www.googleapis.com/customsearch/v1?key=${googleApiKey}&cx=${googleEngineId}&q=${encodedQuery}`
