@@ -15,59 +15,43 @@ export async function searchAffiliateProducts(query: string): Promise<Product[]>
 
   // 1. Google Custom Search API
   const googleApiKey = process.env.GOOGLE_CSE_API_KEY
-  const googleEngineId = process.env.GOOGLE_CSE_ENGINE_ID // Reverted to non-public for server action
+  const googleEngineId = process.env.NEXT_PUBLIC_CSE_ID // Make sure this matches your .env variable!
 
   if (googleApiKey && googleEngineId) {
-    const googleSearchUrl = `https://www.googleapis.com/customsearch/v1?key=${googleApiKey}&cx=${googleEngineId}&q=${encodedQuery}`
     try {
-      const res = await fetch(googleSearchUrl)
-      if (res.ok) {
-        const data = await res.json()
-        data.items?.forEach((item: any) => {
+      const googleResponse = await fetch(
+        `https://www.googleapis.com/customsearch/v1?q=${encodedQuery}&key=${googleApiKey}&cx=${googleEngineId}`
+      )
+      const googleData = await googleResponse.json()
+
+      if (googleData.items) {
+        for (const item of googleData.items) {
           products.push({
             title: item.title,
-            imageUrl: item.pagemap?.cse_thumbnail?.[0]?.src || "/placeholder.svg?height=64&width=64",
+            imageUrl: item.pagemap?.cse_image?.[0]?.src || "",
+            price: undefined, // You can add price extraction logic if needed
             link: item.link,
             source: "Google Search",
-            isSponsored: false, // Google CSE results are not inherently sponsored by us
+            isSponsored: false,
           })
-        })
-      } else {
-        console.error("Google CSE API error:", res.status, res.statusText)
+        }
       }
     } catch (error) {
-      console.error("Error fetching from Google CSE:", error)
+      console.error("Google Custom Search API error:", error)
     }
-  } else {
-    console.warn("Google CSE API keys are not configured. Skipping Google search.")
   }
 
-  // 2. Amazon Affiliate Link
+  // 2. Amazon Affiliate Search (example placeholder)
   const amazonAssociateId = process.env.NEXT_PUBLIC_AMAZON_ASSOCIATE_ID
   if (amazonAssociateId) {
-    products.push({
-      title: `Shop "${query}" on Amazon`,
-      imageUrl: "/placeholder.svg?height=64&width=64", // Placeholder image for direct links
-      link: `https://www.amazon.com/s?k=${encodedQuery}&tag=${amazonAssociateId}`,
-      source: "Amazon",
-      isSponsored: true,
-    })
-  } else {
-    console.warn("Amazon Associate ID is not configured. Skipping Amazon link.")
+    // Add logic to fetch Amazon affiliate products via your backend or API
+    // For example, use a fetch to your affiliate service or Amazon API
   }
 
-  // 3. eBay Affiliate Link
+  // 3. eBay Affiliate Search (example placeholder)
   const ebayPartnerId = process.env.NEXT_PUBLIC_EBAY_PARTNER_ID
   if (ebayPartnerId) {
-    products.push({
-      title: `Shop "${query}" on eBay`,
-      imageUrl: "/placeholder.svg?height=64&width=64", // Placeholder image for direct links
-      link: `https://www.ebay.com/sch/i.html?_nkw=${encodedQuery}&_trkparms=${ebayPartnerId}`, // Simplified for direct URL
-      source: "eBay",
-      isSponsored: true,
-    })
-  } else {
-    console.warn("eBay Partner ID is not configured. Skipping eBay link.")
+    // Add logic to fetch eBay affiliate products via API here
   }
 
   return products
