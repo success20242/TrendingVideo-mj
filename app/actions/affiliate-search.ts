@@ -1,13 +1,42 @@
 "use server"
 
+import { AFFILIATE_NICHES } from "@/app/constants/affiliate-niches";
+
 export interface Product {
-  title: string
-  imageUrl: string
-  price?: string
-  link: string
-  source: "Amazon" | "eBay" | "Google Search"
-  isSponsored: boolean
-  snippet?: string
+  title: string;
+  imageUrl: string;
+  price?: string;
+  link: string;
+  source: "Amazon" | "eBay" | "Google Search";
+  isSponsored: boolean;
+  snippet?: string;
+  niche?: string;
+  nicheIcon?: string;
+}
+
+// Helper: Classify a product into a niche based on title/snippet.
+function classifyNiche(title: string, snippet: string = ""): { name: string, icon: string } | null {
+  const text = (title + " " + snippet).toLowerCase();
+  for (const niche of AFFILIATE_NICHES) {
+    if (niche.keywords.some(keyword => text.includes(keyword))) {
+      return { name: niche.name, icon: niche.icon };
+    }
+  }
+  return null;
+}
+
+// Helper: Try to extract a price from CSE pagemap or snippet
+function extractPrice(item: any): string | undefined {
+  // Try from pagemap
+  if (item.pagemap?.offer?.[0]?.price) {
+    return item.pagemap.offer[0].price;
+  }
+  // Try to parse price from snippet
+  const priceRegex = /\$\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{2})?/;
+  const snippet = item.snippet ?? "";
+  const match = snippet.match(priceRegex);
+  if (match) return match[0];
+  return undefined;
 }
 
 function addAmazonAffiliateTag(link: string, tag?: string) {
@@ -75,23 +104,30 @@ export async function searchAffiliateProducts(query: string): Promise<Product[]>
           source = "eBay";
         }
 
+        // Classify/filter by niche
+        const classification = classifyNiche(item.title ?? "", item.snippet ?? "");
+        if (!classification) continue; // skip non-niche products
+
+        // Extract price and description
+        const price = extractPrice(item);
+        const snippet = item.snippet;
+
         products.push({
           title: item.title ?? "Untitled Product",
           imageUrl,
-          price: undefined, // Extend with price extraction logic if available
+          price,
           link,
           source,
-          isSponsored: source !== "Google Search", // Mark as sponsored if affiliate link
-          snippet: item.snippet,
+          isSponsored: source !== "Google Search",
+          snippet,
+          niche: classification.name,
+          nicheIcon: classification.icon
         });
       }
     }
   } catch (error) {
     console.error("Google Custom Search API error:", error);
   }
-
-  // 2. Amazon Affiliate Search (not implemented: Google CSE results will be affiliate-ized instead)
-  // 3. eBay Affiliate Search (not implemented: Google CSE results will be affiliate-ized instead)
 
   return products;
 }
