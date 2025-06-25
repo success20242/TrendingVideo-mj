@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface Product {
   title: string;
@@ -23,6 +23,16 @@ export default function AffiliateSidebar({ videoTitle, videoTags }: AffiliateSid
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
 
+  useEffect(() => {
+    // Fetch trending or default deals on mount
+    async function fetchDefaultDeals() {
+      const res = await fetch('/api/affiliate-search?query=');
+      const data = await res.json();
+      setProducts(data);
+    }
+    fetchDefaultDeals();
+  }, []);
+
   async function handleSearch(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
@@ -37,17 +47,8 @@ export default function AffiliateSidebar({ videoTitle, videoTags }: AffiliateSid
     <aside style={{ padding: 16, width: 320, background: "#f9f9f9" }}>
       <div style={{ marginBottom: 16 }}>
         <div style={{ fontWeight: "bold", fontSize: 20, marginBottom: 8 }}>
-          Welcome to TrendifyTube
+          Best Deals on Trending Products
         </div>
-        {/* 
-        // Optionally, show tags if they're present
-        {videoTags && videoTags.length > 0 && (
-          <>
-            <div style={{ fontWeight: "bold" }}>Video Tags:</div>
-            <div>{videoTags.join(", ")}</div>
-          </>
-        )}
-        */}
       </div>
       <form onSubmit={handleSearch} style={{ marginBottom: 16 }}>
         <input
