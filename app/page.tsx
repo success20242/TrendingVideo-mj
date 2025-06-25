@@ -1,5 +1,5 @@
 import TrendingVideo from "../trending-video"
-import { AffiliateSidebar } from "@/components/affiliate-sidebar"
+import AffiliateSidebar from "@/components/affiliate-sidebar"
 
 export default function Page() {
   // You can customize these values or get them from your video data
