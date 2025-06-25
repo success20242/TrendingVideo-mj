@@ -1,5 +1,4 @@
 "use client";
-
 import { useState } from "react";
 
 interface Product {
@@ -36,7 +35,13 @@ export default function AffiliateSidebar() {
           value={query}
           onChange={e => setQuery(e.target.value)}
           placeholder="Search trending products..."
-          style={{ width: "70%", padding: 8, marginRight: 8, borderRadius: 4, border: "1px solid #ccc" }}
+          style={{
+            width: "70%",
+            padding: 8,
+            marginRight: 8,
+            borderRadius: 4,
+            border: "1px solid #ccc",
+          }}
         />
         <button type="submit" style={{ padding: 8, borderRadius: 4 }}>
           Search
@@ -45,17 +50,52 @@ export default function AffiliateSidebar() {
       {loading && <div>Loading...</div>}
       {!loading && products.length === 0 && <div>No deals found.</div>}
       {products.map(product => (
-        <div key={product.link} style={{ marginBottom: 24, background: "#fff", padding: 10, borderRadius: 6, boxShadow: "0 1px 4px #0001" }}>
+        <div
+          key={product.link}
+          style={{
+            marginBottom: 24,
+            background: "#fff",
+            padding: 10,
+            borderRadius: 6,
+            boxShadow: "0 1px 4px #0001",
+          }}
+        >
           <div>
             <span style={{ fontSize: 22 }}>{product.nicheIcon}</span>{" "}
             <strong>{product.niche}</strong> | <small>{product.source}</small>
           </div>
-          <a href={product.link} target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none", color: "inherit" }}>
-            <img src={product.imageUrl} alt={product.title} style={{ width: "100%", borderRadius: 4, margin: "8px 0" }} />
+          <a
+            href={product.link}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ textDecoration: "none", color: "inherit" }}
+          >
+            {product.imageUrl && (
+              <img
+                src={product.imageUrl}
+                alt={product.title}
+                style={{
+                  width: "100%",
+                  borderRadius: 4,
+                  margin: "8px 0",
+                  maxHeight: 120,
+                  objectFit: "contain",
+                  background: "#fafafa",
+                }}
+              />
+            )}
             <div style={{ fontWeight: "bold" }}>{product.title}</div>
           </a>
-          {product.price && <div style={{ color: "#2a9d8f", fontWeight: 600 }}>Price: {product.price}</div>}
-          {product.snippet && <div style={{ fontStyle: "italic", color: "#555" }}>{product.snippet}</div>}
+          {product.price && (
+            <div style={{ color: "#2a9d8f", fontWeight: 600 }}>
+              Price: {product.price}
+            </div>
+          )}
+          {product.snippet && (
+            <div style={{ fontStyle: "italic", color: "#555" }}>
+              {product.snippet}
+            </div>
+          )}
         </div>
       ))}
     </aside>
