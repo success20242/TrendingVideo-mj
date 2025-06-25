@@ -1,7 +1,6 @@
 "use client"
 
 import { useEffect, useState } from "react"
-// Removed direct import of searchAffiliateProducts as it's a server action
 import { Card, CardContent } from "@/components/ui/card"
 import { SidebarHeader, SidebarContent } from "@/components/ui/sidebar"
 
@@ -11,17 +10,18 @@ interface Product {
   imageUrl: string
   snippet?: string
   isSponsored?: boolean
-  source: string // Added source to the Product interface
+  source: string
 }
 
 export function AffiliateSidebar({ videoTitle, videoTags }: { videoTitle: string; videoTags: string[] }) {
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [searchQuery, setSearchQuery] = useState(videoTitle || videoTags[0] || "")
 
   useEffect(() => {
     const queryToUse = videoTitle || videoTags[0] || ""
+    console.log("🔍 Search query to use:", queryToUse)
+
     if (!queryToUse) {
       setProducts([])
       setLoading(false)
@@ -32,6 +32,7 @@ export function AffiliateSidebar({ videoTitle, videoTags }: { videoTitle: string
     const cached = localStorage.getItem(cacheKey)
 
     if (cached) {
+      console.log("📦 Loaded from cache:", JSON.parse(cached))
       setProducts(JSON.parse(cached))
       setLoading(false)
       return
@@ -39,7 +40,7 @@ export function AffiliateSidebar({ videoTitle, videoTags }: { videoTitle: string
 
     setLoading(true)
     setError(null)
-    // Fetch from the new API route
+
     fetch(`/api/affiliate-search?query=${encodeURIComponent(queryToUse)}`)
       .then((res) => {
         if (!res.ok) {
@@ -48,11 +49,12 @@ export function AffiliateSidebar({ videoTitle, videoTags }: { videoTitle: string
         return res.json()
       })
       .then((res) => {
+        console.log("✅ API Response:", res)
         setProducts(res)
         localStorage.setItem(cacheKey, JSON.stringify(res))
       })
       .catch((err) => {
-        console.error("Error fetching affiliate products:", err)
+        console.error("❌ Error fetching affiliate products:", err)
         setError("Failed to fetch products. Please try again later.")
         setProducts([])
       })
