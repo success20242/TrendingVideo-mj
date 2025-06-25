@@ -1,5 +1,5 @@
-import TrendingVideo from "../trending-video"
-import AffiliateSidebar from "@/components/affiliate-sidebar"
+import TrendingVideo from "./trending-video";
+import AffiliateSidebar from "@/components/affiliate-sidebar";
 
 export default function Page() {
   return (
@@ -11,5 +11,5 @@ export default function Page() {
         <TrendingVideo />
       </div>
     </div>
-  )
+  );
 }
