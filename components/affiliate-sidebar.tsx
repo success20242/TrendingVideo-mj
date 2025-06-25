@@ -14,8 +14,8 @@ interface Product {
 }
 
 interface AffiliateSidebarProps {
-  videoTitle: string;
-  videoTags: string[];
+  videoTitle?: string; // Now optional
+  videoTags?: string[]; // Now optional
 }
 
 export default function AffiliateSidebar({ videoTitle, videoTags }: AffiliateSidebarProps) {
@@ -36,10 +36,18 @@ export default function AffiliateSidebar({ videoTitle, videoTags }: AffiliateSid
   return (
     <aside style={{ padding: 16, width: 320, background: "#f9f9f9" }}>
       <div style={{ marginBottom: 16 }}>
-        <div style={{ fontWeight: "bold" }}>Video Title:</div>
-        <div>{videoTitle}</div>
-        <div style={{ fontWeight: "bold" }}>Video Tags:</div>
-        <div>{videoTags.join(", ")}</div>
+        <div style={{ fontWeight: "bold", fontSize: 20, marginBottom: 8 }}>
+          Welcome to TrendifyTube
+        </div>
+        {/* 
+        // Optionally, show tags if they're present
+        {videoTags && videoTags.length > 0 && (
+          <>
+            <div style={{ fontWeight: "bold" }}>Video Tags:</div>
+            <div>{videoTags.join(", ")}</div>
+          </>
+        )}
+        */}
       </div>
       <form onSubmit={handleSearch} style={{ marginBottom: 16 }}>
         <input
