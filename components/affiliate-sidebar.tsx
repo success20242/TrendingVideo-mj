@@ -1,127 +1,49 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import { Card, CardContent } from "@/components/ui/card"
-import { SidebarHeader, SidebarContent } from "@/components/ui/sidebar"
+import { useState } from "react";
 
-interface Product {
-  title: string
-  link: string
-  imageUrl: string
-  snippet?: string
-  isSponsored?: boolean
-  source: string
-}
+// You may need to import your Product type and make an API call to your server action
+// For this example, let's assume you have an /api/affiliate-search route set up
 
-export function AffiliateSidebar({ videoTitle, videoTags }: { videoTitle: string; videoTags: string[] }) {
-  const [products, setProducts] = useState<Product[]>([])
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+export default function AffiliateSidebar() {
+  const [query, setQuery] = useState("");
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    const queryToUse = videoTitle || videoTags[0] || ""
-    // You may keep or remove this debug log:
-    // console.log("🔍 Search query to use:", queryToUse)
-
-    if (!queryToUse) {
-      setProducts([])
-      setLoading(false)
-      return
-    }
-
-    const cacheKey = `affiliate_${queryToUse}`
-
-    let cached: string | null = null
-    try {
-      if (typeof window !== "undefined") {
-        cached = localStorage.getItem(cacheKey)
-      }
-    } catch {}
-    if (cached) {
-      // You may keep or remove this debug log:
-      // console.log("📦 Loaded from cache:", JSON.parse(cached))
-      setProducts(JSON.parse(cached))
-      setLoading(false)
-      return
-    }
-
-    setLoading(true)
-    setError(null)
-
-    fetch(`/api/affiliate-search?query=${encodeURIComponent(queryToUse)}`)
-      .then((res) => {
-        if (!res.ok) {
-          throw new Error(`HTTP error! status: ${res.status}`)
-        }
-        return res.json()
-      })
-      .then((res) => {
-        // You may keep or remove this debug log:
-        // console.log("✅ API Response:", res)
-        setProducts(res)
-        try {
-          if (typeof window !== "undefined") {
-            localStorage.setItem(cacheKey, JSON.stringify(res))
-          }
-        } catch {}
-      })
-      .catch((err) => {
-        // You may keep or remove this debug log:
-        // console.error("❌ Error fetching affiliate products:", err)
-        setError("Failed to fetch products. Please try again later.")
-        setProducts([])
-      })
-      .finally(() => setLoading(false))
-  }, [videoTitle, videoTags])
+  async function handleSearch(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true);
+    const res = await fetch(`/api/affiliate-search?query=${encodeURIComponent(query)}`);
+    const data = await res.json();
+    setProducts(data);
+    setLoading(false);
+  }
 
   return (
-    <>
-      <SidebarHeader>
-        <h3 className="text-lg font-semibold text-center">Shop Deals</h3>
-      </SidebarHeader>
-
-      <SidebarContent className="p-2">
-        {loading ? (
-          <p className="text-sm text-muted-foreground">Loading deals...</p>
-        ) : error ? (
-          <div className="text-center text-destructive">{error}</div>
-        ) : products.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No deals found.</p>
-        ) : (
-          <div className="grid gap-3">
-            {products.map((p, idx) => (
-              <Card key={p.link + idx} className="w-full bg-background text-foreground shadow-sm">
-                <a href={p.link} target="_blank" rel="noopener noreferrer">
-                  <CardContent className="p-2">
-                    {p.imageUrl ? (
-                      <img
-                        src={p.imageUrl}
-                        alt={p.title}
-                        className="w-full h-24 object-contain mb-2 rounded-md"
-                        loading="lazy"
-                      />
-                    ) : (
-                      <div className="w-full h-24 bg-gray-200 flex items-center justify-center mb-2 text-gray-500 rounded-md">
-                        No Image
-                      </div>
-                    )}
-                    <p className="text-sm font-medium line-clamp-2">{p.title}</p>
-                    {p.snippet && <p className="text-xs text-muted-foreground line-clamp-2">{p.snippet}</p>}
-                    <span className="text-xs text-blue-500 hover:underline mt-1 block">View on {p.source}</span>
-                    {(p.isSponsored || p.source === "Google Search") && (
-                      <span className="text-xs text-gray-500 dark:text-gray-400 mt-1 block">Sponsored</span>
-                    )}
-                  </CardContent>
-                </a>
-              </Card>
-            ))}
-          </div>
-        )}
-
-        <p className="text-xs text-muted-foreground italic mt-6 p-2">
-          As an affiliate, we may earn from qualifying purchases.
-        </p>
-      </SidebarContent>
-    </>
-  )
+    <aside>
+      <form onSubmit={handleSearch} style={{ marginBottom: 16 }}>
+        <input
+          value={query}
+          onChange={e => setQuery(e.target.value)}
+          placeholder="Search trending products..."
+          style={{ width: "80%", marginRight: 8 }}
+        />
+        <button type="submit">Search</button>
+      </form>
+      {loading && <div>Loading...</div>}
+      {!loading && products.length === 0 && <div>No deals found.</div>}
+      {products.map(product => (
+        <div key={product.link} style={{ marginBottom: 24 }}>
+          <span style={{ fontSize: 24 }}>{product.nicheIcon}</span>
+          <a href={product.link} target="_blank" rel="noopener noreferrer">
+            <img src={product.imageUrl} alt={product.title} style={{ width: 100 }} />
+            <div>{product.title}</div>
+          </a>
+          {product.price && <div><strong>Price:</strong> {product.price}</div>}
+          {product.snippet && <div><em>{product.snippet}</em></div>}
+          <div style={{ color: "#888" }}>{product.niche} | {product.source}</div>
+        </div>
+      ))}
+    </aside>
+  );
 }
