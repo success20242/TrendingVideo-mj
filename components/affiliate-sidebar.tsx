@@ -13,7 +13,12 @@ interface Product {
   nicheIcon?: string;
 }
 
-export default function AffiliateSidebar() {
+interface AffiliateSidebarProps {
+  videoTitle: string;
+  videoTags: string[];
+}
+
+export default function AffiliateSidebar({ videoTitle, videoTags }: AffiliateSidebarProps) {
   const [query, setQuery] = useState("");
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
@@ -30,6 +35,12 @@ export default function AffiliateSidebar() {
 
   return (
     <aside style={{ padding: 16, width: 320, background: "#f9f9f9" }}>
+      <div style={{ marginBottom: 16 }}>
+        <div style={{ fontWeight: "bold" }}>Video Title:</div>
+        <div>{videoTitle}</div>
+        <div style={{ fontWeight: "bold" }}>Video Tags:</div>
+        <div>{videoTags.join(", ")}</div>
+      </div>
       <form onSubmit={handleSearch} style={{ marginBottom: 16 }}>
         <input
           value={query}
