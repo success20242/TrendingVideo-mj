@@ -2,8 +2,8 @@ import TrendingVideo from "../trending-video"
 import AffiliateSidebar from "@/components/affiliate-sidebar"
 
 export default function Page() {
-  // You can customize these values or get them from your video data
-  const videoTitle = "Welcome to Starr Park! (Brawl Stars Animation)"
+  // Updated video title
+  const videoTitle = "Welcome to TrendifyTube"
   const videoTags = ["Brawl Stars", "Starr Park"]
 
   return (
