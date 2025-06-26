@@ -14,8 +14,6 @@ export interface Product {
   nicheIcon?: string;
 }
 
-// Helper: Classify a product into a niche based on title/snippet.
-// Returns "Uncategorized" if no match.
 function classifyNiche(title: string, snippet: string = ""): { name: string; icon: string } {
   const text = (title + " " + snippet).toLowerCase();
   for (const niche of AFFILIATE_NICHES) {
@@ -23,11 +21,9 @@ function classifyNiche(title: string, snippet: string = ""): { name: string; ico
       return { name: niche.name, icon: niche.icon };
     }
   }
-  // Fallback niche
   return { name: "Uncategorized", icon: "❓" };
 }
 
-// Helper: Try to extract a price from CSE pagemap or snippet
 function extractPrice(item: any): string | undefined {
   if (item.pagemap?.offer?.[0]?.price) {
     return item.pagemap.offer[0].price;
@@ -35,25 +31,26 @@ function extractPrice(item: any): string | undefined {
   const priceRegex = /\$\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{2})?/;
   const snippet = item.snippet ?? "";
   const match = snippet.match(priceRegex);
-  if (match) return match[0];
-  return undefined;
+  return match ? match[0] : undefined;
 }
 
 function addAmazonAffiliateTag(link: string, tag?: string) {
-  if (tag && link.includes("amazon.com")) {
-    return link + (link.includes("?") ? "&" : "?") + `tag=${tag}`;
-  }
-  return link;
+  return tag && link.includes("amazon.com")
+    ? link + (link.includes("?") ? "&" : "?") + `tag=${tag}`
+    : link;
 }
 
 function addEbayPartnerId(link: string, partnerId?: string) {
-  if (partnerId && link.includes("ebay.com")) {
-    return link + (link.includes("?") ? "&" : "?") + `campid=${partnerId}`;
-  }
-  return link;
+  return partnerId && link.includes("ebay.com")
+    ? link + (link.includes("?") ? "&" : "?") + `campid=${partnerId}`
+    : link;
 }
 
-export async function searchAffiliateProducts(query: string): Promise<Product[]> {
+export async function searchAffiliateProducts(
+  query: string,
+  page: number = 1,
+  limit: number = 10
+): Promise<Product[]> {
   const products: Product[] = [];
   const encodedQuery = encodeURIComponent(query);
 
@@ -74,11 +71,7 @@ export async function searchAffiliateProducts(query: string): Promise<Product[]>
     );
 
     if (!googleResponse.ok) {
-      console.error(
-        "Google Custom Search API error:",
-        googleResponse.status,
-        googleResponse.statusText
-      );
+      console.error("Google Custom Search API error:", googleResponse.status, googleResponse.statusText);
       return products;
     }
 
@@ -103,7 +96,6 @@ export async function searchAffiliateProducts(query: string): Promise<Product[]>
         }
 
         const classification = classifyNiche(item.title ?? "", item.snippet ?? "");
-
         const price = extractPrice(item);
         const snippet = item.snippet;
 
@@ -124,5 +116,8 @@ export async function searchAffiliateProducts(query: string): Promise<Product[]>
     console.error("Google Custom Search API error:", error);
   }
 
-  return products;
+  // Apply pagination
+  const start = (page - 1) * limit;
+  const end = start + limit;
+  return products.slice(start, end);
 }
