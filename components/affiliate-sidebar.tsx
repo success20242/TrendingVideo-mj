@@ -42,6 +42,7 @@ export default function AffiliateSidebar() {
       try {
         const res = await fetch('/api/affiliate-search?query=');
         const data = await res.json();
+        console.log("Fetched products on mount:", data); // Debug log
         setProducts(Array.isArray(data) ? data : []);
       } catch (err) {
         console.error("Failed to fetch default deals:", err);
@@ -58,6 +59,7 @@ export default function AffiliateSidebar() {
     try {
       const res = await fetch(`/api/affiliate-search?query=${encodeURIComponent(query)}`);
       const data = await res.json();
+      console.log("Fetched products on search:", data); // Debug log
       setProducts(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error("Search failed:", err);
@@ -66,12 +68,15 @@ export default function AffiliateSidebar() {
     setLoading(false);
   }
 
-  // Filter products by niche matching selectedCategory exactly
+  // Improved filter: case-insensitive match between product niche and selectedCategory
   const filteredProducts =
     Array.isArray(products)
       ? selectedCategory === "All"
         ? products
-        : products.filter((p) => p.niche === selectedCategory)
+        : products.filter(
+            (p) =>
+              p.niche?.toLowerCase() === selectedCategory.toLowerCase()
+          )
       : [];
 
   return (
