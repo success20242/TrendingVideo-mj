@@ -16,62 +16,65 @@ interface Product {
   nicheIcon?: string;
 }
 
+interface SearchResult {
+  products: Product[];
+  total: number;
+}
+
 export default function AffiliateSidebar() {
   const [query, setQuery] = useState("");
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState("All");
 
-  // Build categories dynamically from AFFILIATE_NICHES + All + Uncategorized
+  const [page, setPage] = useState(1);
+  const limit = 10;
+  const [totalResults, setTotalResults] = useState(0);
+
   const categories = [
     { name: "All", icon: "🔍" },
     ...AFFILIATE_NICHES,
     { name: "Uncategorized", icon: "❓" },
   ];
 
-  useEffect(() => {
-    async function fetchDeals() {
-      try {
-        const defaultQuery = "shoes"; // or any default you want
-        const res = await fetch(`/api/affiliate-search?query=${defaultQuery}`);
-        const data = await res.json();
-        setProducts(Array.isArray(data) ? data : []);
-      } catch (err) {
-        console.error("Failed to fetch default deals:", err);
-        setProducts([]);
-      }
+  async function fetchProducts(searchQuery: string, pageNumber: number) {
+    setLoading(true);
+    try {
+      const res = await fetch(
+        `/api/affiliate-search?query=${encodeURIComponent(searchQuery)}&page=${pageNumber}&limit=${limit}`
+      );
+      const data: SearchResult = await res.json();
+      setProducts(Array.isArray(data.products) ? data.products : []);
+      setTotalResults(data.total || 0);
+    } catch (err) {
+      console.error("Failed to fetch deals:", err);
+      setProducts([]);
+      setTotalResults(0);
     }
-    fetchDeals();
-  }, []);
+    setLoading(false);
+  }
+
+  useEffect(() => {
+    // On mount and when page changes, fetch with default query "shoes"
+    fetchProducts("shoes", page);
+  }, [page]);
 
   async function handleSearch(e: React.FormEvent) {
     e.preventDefault();
     if (!query.trim()) return;
-
-    setLoading(true);
-    setProducts([]);
-
-    try {
-      const res = await fetch(`/api/affiliate-search?query=${encodeURIComponent(query)}`);
-      const data = await res.json();
-      setProducts(Array.isArray(data) ? data : []);
-    } catch (err) {
-      console.error("Search failed:", err);
-      setProducts([]);
-    }
-
-    setLoading(false);
+    setPage(1); // Reset page to 1 on new search
+    fetchProducts(query.trim(), 1);
   }
 
   // Filter products by selected category (case-insensitive)
   const filteredProducts =
-    Array.isArray(products)
-      ? selectedCategory === "All"
-        ? products
-        : products.filter(
-            (p) => p.niche?.toLowerCase() === selectedCategory.toLowerCase()
-          )
-      : [];
+    selectedCategory === "All"
+      ? products
+      : products.filter(
+          (p) => p.niche?.toLowerCase() === selectedCategory.toLowerCase()
+        );
+
+  const totalPages = Math.ceil(totalResults / limit);
 
   return (
     <aside className="p-4 w-full box-border bg-gray-50">
@@ -117,6 +120,29 @@ export default function AffiliateSidebar() {
         filteredProducts.map((product) => (
           <ProductCard key={product.link} product={product} />
         ))}
+
+      {/* Pagination Controls */}
+      <div className="flex justify-between mt-4">
+        <button
+          onClick={() => setPage((p) => Math.max(p - 1, 1))}
+          disabled={page === 1 || loading}
+          className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50"
+        >
+          Previous
+        </button>
+
+        <span className="text-sm pt-1">
+          Page {page} of {totalPages || 1}
+        </span>
+
+        <button
+          onClick={() => setPage((p) => (p < totalPages ? p + 1 : p))}
+          disabled={loading || page === totalPages}
+          className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50"
+        >
+          Next
+        </button>
+      </div>
     </aside>
   );
 }
