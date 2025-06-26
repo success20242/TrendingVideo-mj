@@ -24,9 +24,14 @@ export default function AffiliateSidebar() {
 
   useEffect(() => {
     async function fetchDeals() {
-      const res = await fetch('/api/affiliate-search?query=');
-      const data = await res.json();
-      setProducts(data);
+      try {
+        const res = await fetch('/api/affiliate-search?query=');
+        const data = await res.json();
+        setProducts(Array.isArray(data) ? data : []);
+      } catch (err) {
+        console.error("Failed to fetch default deals:", err);
+        setProducts([]);
+      }
     }
     fetchDeals();
   }, []);
@@ -35,16 +40,23 @@ export default function AffiliateSidebar() {
     e.preventDefault();
     setLoading(true);
     setProducts([]);
-    const res = await fetch(`/api/affiliate-search?query=${encodeURIComponent(query)}`);
-    const data = await res.json();
-    setProducts(data);
+    try {
+      const res = await fetch(`/api/affiliate-search?query=${encodeURIComponent(query)}`);
+      const data = await res.json();
+      setProducts(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error("Search failed:", err);
+      setProducts([]);
+    }
     setLoading(false);
   }
 
   const filteredProducts =
-    selectedCategory === "All"
-      ? products
-      : products.filter(p => p.niche?.toLowerCase() === selectedCategory.toLowerCase());
+    Array.isArray(products)
+      ? selectedCategory === "All"
+        ? products
+        : products.filter((p) => p.niche?.toLowerCase() === selectedCategory.toLowerCase())
+      : [];
 
   return (
     <aside className="p-4 w-full box-border bg-gray-50">
@@ -83,7 +95,9 @@ export default function AffiliateSidebar() {
       </div>
 
       {loading && <div className="text-sm">Loading...</div>}
-      {!loading && filteredProducts.length === 0 && <div className="text-sm text-gray-500">No deals found.</div>}
+      {!loading && filteredProducts.length === 0 && (
+        <div className="text-sm text-gray-500">No deals found.</div>
+      )}
       {!loading &&
         filteredProducts.map((product) => (
           <ProductCard key={product.link} product={product} />
