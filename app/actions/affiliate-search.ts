@@ -102,7 +102,6 @@ export async function searchAffiliateProducts(query: string): Promise<Product[]>
           source = "eBay";
         }
 
-        // Always assign a niche, even if Uncategorized
         const classification = classifyNiche(item.title ?? "", item.snippet ?? "");
 
         const price = extractPrice(item);
