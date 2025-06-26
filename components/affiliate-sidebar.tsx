@@ -25,9 +25,9 @@ export default function AffiliateSidebar() {
   useEffect(() => {
     async function fetchDeals() {
       try {
-        const res = await fetch('/api/affiliate-search?query=');
+        const res = await fetch("/api/affiliate-search?query=trending");
         const data = await res.json();
-        setProducts(Array.isArray(data) ? data : []);
+        setProducts(Array.isArray(data?.items) ? data.items : []);
       } catch (err) {
         console.error("Failed to fetch default deals:", err);
         setProducts([]);
@@ -43,7 +43,7 @@ export default function AffiliateSidebar() {
     try {
       const res = await fetch(`/api/affiliate-search?query=${encodeURIComponent(query)}`);
       const data = await res.json();
-      setProducts(Array.isArray(data) ? data : []);
+      setProducts(Array.isArray(data?.items) ? data.items : []);
     } catch (err) {
       console.error("Search failed:", err);
       setProducts([]);
@@ -99,6 +99,7 @@ export default function AffiliateSidebar() {
         <div className="text-sm text-gray-500">No deals found.</div>
       )}
       {!loading &&
+        Array.isArray(filteredProducts) &&
         filteredProducts.map((product) => (
           <ProductCard key={product.link} product={product} />
         ))}
