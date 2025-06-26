@@ -34,13 +34,12 @@ export default function AffiliateSidebar() {
   const [loading, setLoading] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState("All");
 
-  // Add "All" category at the start
   const categories = [{ name: "All", icon: "🔍" }, ...AFFILIATE_NICHES];
 
   useEffect(() => {
     async function fetchDeals() {
       try {
-        const defaultQuery = "shoes"; // ✅ Updated to prevent 400 error
+        const defaultQuery = "shoes";
         const res = await fetch(`/api/affiliate-search?query=${defaultQuery}`);
         const data = await res.json();
         console.log("Fetched products on mount:", data);
@@ -74,8 +73,7 @@ export default function AffiliateSidebar() {
       ? selectedCategory === "All"
         ? products
         : products.filter(
-            (p) =>
-              p.niche?.toLowerCase() === selectedCategory.toLowerCase()
+            (p) => p.niche?.toLowerCase() === selectedCategory.toLowerCase()
           )
       : [];
 
@@ -116,13 +114,16 @@ export default function AffiliateSidebar() {
       </div>
 
       {loading && <div className="text-sm">Loading...</div>}
-      {!loading && filteredProducts.length === 0 && (
-        <div className="text-sm text-gray-500">No deals found.</div>
+
+      {!loading && (
+        filteredProducts.length === 0 ? (
+          <div className="text-sm text-gray-500">No deals found.</div>
+        ) : (
+          filteredProducts.map((product) => (
+            <ProductCard key={product.link} product={product} />
+          ))
+        )
       )}
-      {!loading &&
-        filteredProducts.map((product) => (
-          <ProductCard key={product.link} product={product} />
-        ))}
     </aside>
   );
 }
