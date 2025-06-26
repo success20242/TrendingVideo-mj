@@ -13,15 +13,15 @@ export async function GET(request: Request) {
       );
     }
 
-    // Parse page and limit query params with defaults
     const pageParam = searchParams.get("page");
     const limitParam = searchParams.get("limit");
 
     const page = pageParam ? Math.max(parseInt(pageParam, 10), 1) : 1;
     const limit = limitParam ? Math.max(parseInt(limitParam, 10), 1) : 10;
 
-    const results = await searchAffiliateProducts(query, page, limit);
-    return NextResponse.json(results);
+    const result = await searchAffiliateProducts(query, page, limit);
+
+    return NextResponse.json(result);
   } catch (error) {
     console.error("Error in affiliate-search API route:", error);
     return NextResponse.json(
