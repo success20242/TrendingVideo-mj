@@ -54,6 +54,7 @@ export default function AffiliateSidebar() {
 
   async function handleSearch(e: React.FormEvent) {
     e.preventDefault();
+    if (!query.trim()) return; // prevent empty query
     setLoading(true);
     setProducts([]);
     try {
@@ -114,16 +115,13 @@ export default function AffiliateSidebar() {
       </div>
 
       {loading && <div className="text-sm">Loading...</div>}
-
-      {!loading && (
-        filteredProducts.length === 0 ? (
-          <div className="text-sm text-gray-500">No deals found.</div>
-        ) : (
-          filteredProducts.map((product) => (
-            <ProductCard key={product.link} product={product} />
-          ))
-        )
+      {!loading && filteredProducts.length === 0 && (
+        <div className="text-sm text-gray-500">No deals found.</div>
       )}
+      {!loading &&
+        filteredProducts.map((product) => (
+          <ProductCard key={product.link} product={product} />
+        ))}
     </aside>
   );
 }
