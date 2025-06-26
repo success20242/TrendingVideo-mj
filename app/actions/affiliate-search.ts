@@ -14,6 +14,11 @@ export interface Product {
   nicheIcon?: string;
 }
 
+export interface SearchResult {
+  products: Product[];
+  total: number;
+}
+
 function classifyNiche(title: string, snippet: string = ""): { name: string; icon: string } {
   const text = (title + " " + snippet).toLowerCase();
   for (const niche of AFFILIATE_NICHES) {
@@ -50,8 +55,9 @@ export async function searchAffiliateProducts(
   query: string,
   page: number = 1,
   limit: number = 10
-): Promise<Product[]> {
+): Promise<SearchResult> {
   const products: Product[] = [];
+  let total = 0;
   const encodedQuery = encodeURIComponent(query);
 
   const googleApiKey = process.env.GOOGLE_CSE_API_KEY;
@@ -61,7 +67,7 @@ export async function searchAffiliateProducts(
 
   if (!googleApiKey || !googleEngineId) {
     console.warn("Missing Google API key or Engine ID");
-    return products;
+    return { products, total };
   }
 
   try {
@@ -71,11 +77,17 @@ export async function searchAffiliateProducts(
     );
 
     if (!googleResponse.ok) {
-      console.error("Google Custom Search API error:", googleResponse.status, googleResponse.statusText);
-      return products;
+      console.error(
+        "Google Custom Search API error:",
+        googleResponse.status,
+        googleResponse.statusText
+      );
+      return { products, total };
     }
 
     const googleData = await googleResponse.json();
+
+    total = parseInt(googleData.searchInformation?.totalResults ?? "0", 10);
 
     if (Array.isArray(googleData.items)) {
       for (const item of googleData.items) {
@@ -116,8 +128,8 @@ export async function searchAffiliateProducts(
     console.error("Google Custom Search API error:", error);
   }
 
-  // Apply pagination
+  // Paginate results after fetching all (Google returns max ~10 per request)
   const start = (page - 1) * limit;
   const end = start + limit;
-  return products.slice(start, end);
+  return { products: products.slice(start, end), total };
 }
