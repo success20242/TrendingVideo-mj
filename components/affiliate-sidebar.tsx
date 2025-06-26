@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import ProductCard from "./ProductCard";
 
-// Paste or import your AFFILIATE_NICHES here:
+// Affiliate niches with icons
 const AFFILIATE_NICHES = [
   { name: "Tech & Gadgets", icon: "📱" },
   { name: "Health & Wellness", icon: "💪" },
@@ -34,7 +34,7 @@ export default function AffiliateSidebar() {
   const [loading, setLoading] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState("All");
 
-  // Add "All" manually to the start of categories array
+  // Add "All" category at the start
   const categories = [{ name: "All", icon: "🔍" }, ...AFFILIATE_NICHES];
 
   useEffect(() => {
@@ -66,6 +66,7 @@ export default function AffiliateSidebar() {
     setLoading(false);
   }
 
+  // Filter products by niche matching selectedCategory exactly
   const filteredProducts =
     Array.isArray(products)
       ? selectedCategory === "All"
