@@ -2,6 +2,20 @@
 import { useState, useEffect } from "react";
 import ProductCard from "./ProductCard";
 
+// Paste or import your AFFILIATE_NICHES here:
+const AFFILIATE_NICHES = [
+  { name: "Tech & Gadgets", icon: "📱" },
+  { name: "Health & Wellness", icon: "💪" },
+  { name: "Personal Finance & Investing", icon: "💰" },
+  { name: "Home Improvement & DIY", icon: "🏠" },
+  { name: "Beauty & Skincare", icon: "💄" },
+  { name: "Online Learning & E-Learning Tools", icon: "🎓" },
+  { name: "Sustainable & Eco-Friendly Products", icon: "🌱" },
+  { name: "Gaming & Esports", icon: "🎮" },
+  { name: "Pet Care & Products", icon: "🐾" },
+  { name: "Travel & Outdoor Gear", icon: "🌍" }
+];
+
 interface Product {
   title: string;
   imageUrl: string;
@@ -20,14 +34,15 @@ export default function AffiliateSidebar() {
   const [loading, setLoading] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState("All");
 
-  const categories = ["All", "Tech", "Fashion", "Fitness", "Home", "Travel"];
+  // Add "All" manually to the start of categories array
+  const categories = [{ name: "All", icon: "🔍" }, ...AFFILIATE_NICHES];
 
   useEffect(() => {
     async function fetchDeals() {
       try {
-        const res = await fetch("/api/affiliate-search?query=trending");
+        const res = await fetch('/api/affiliate-search?query=');
         const data = await res.json();
-        setProducts(Array.isArray(data?.items) ? data.items : []);
+        setProducts(Array.isArray(data) ? data : []);
       } catch (err) {
         console.error("Failed to fetch default deals:", err);
         setProducts([]);
@@ -43,7 +58,7 @@ export default function AffiliateSidebar() {
     try {
       const res = await fetch(`/api/affiliate-search?query=${encodeURIComponent(query)}`);
       const data = await res.json();
-      setProducts(Array.isArray(data?.items) ? data.items : []);
+      setProducts(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error("Search failed:", err);
       setProducts([]);
@@ -55,7 +70,7 @@ export default function AffiliateSidebar() {
     Array.isArray(products)
       ? selectedCategory === "All"
         ? products
-        : products.filter((p) => p.niche?.toLowerCase() === selectedCategory.toLowerCase())
+        : products.filter((p) => p.niche === selectedCategory)
       : [];
 
   return (
@@ -78,17 +93,17 @@ export default function AffiliateSidebar() {
         </form>
 
         <div className="flex flex-wrap gap-2 mb-4">
-          {categories.map((cat) => (
+          {categories.map(({ name, icon }) => (
             <button
-              key={cat}
-              onClick={() => setSelectedCategory(cat)}
+              key={name}
+              onClick={() => setSelectedCategory(name)}
               className={`text-sm px-3 py-1 rounded-full border ${
-                selectedCategory === cat
+                selectedCategory === name
                   ? "bg-teal-600 text-white"
                   : "bg-white text-gray-600 border-gray-300"
               }`}
             >
-              {cat}
+              <span className="mr-1">{icon}</span> {name}
             </button>
           ))}
         </div>
@@ -99,7 +114,6 @@ export default function AffiliateSidebar() {
         <div className="text-sm text-gray-500">No deals found.</div>
       )}
       {!loading &&
-        Array.isArray(filteredProducts) &&
         filteredProducts.map((product) => (
           <ProductCard key={product.link} product={product} />
         ))}
