@@ -55,6 +55,7 @@ export default function TrendingVideo() {
   const audioRef = useRef(null);
   const [isMusicPlaying, setIsMusicPlaying] = useState(true);
 
+  // Load preferences from localStorage and initialize audio play/pause
   useEffect(() => {
     const savedMode = localStorage.getItem("darkMode");
     if (savedMode === "true") {
@@ -75,6 +76,7 @@ export default function TrendingVideo() {
     }
   }, []);
 
+  // Escape key closes fullscreen modal
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === "Escape") {
@@ -106,6 +108,7 @@ export default function TrendingVideo() {
     });
   };
 
+  // Toggle background music playback and sync with localStorage
   const toggleMusic = () => {
     const newStatus = !isMusicPlaying;
     setIsMusicPlaying(newStatus);
@@ -119,6 +122,7 @@ export default function TrendingVideo() {
     }
   };
 
+  // Fetch trending videos based on country and language
   useEffect(() => {
     const fetchTrendingVideos = async () => {
       setLoading(true);
@@ -165,6 +169,7 @@ export default function TrendingVideo() {
     );
   };
 
+  // Whenever track changes or music playing state changes, reload audio and play/pause accordingly
   useEffect(() => {
     if (audioRef.current) {
       audioRef.current.pause();
@@ -175,6 +180,7 @@ export default function TrendingVideo() {
     }
   }, [bgTrackIndex, isMusicPlaying]);
 
+  // Check autoplay support for videos
   useEffect(() => {
     const testVideo = document.createElement("video");
     testVideo.muted = true;
@@ -186,5 +192,191 @@ export default function TrendingVideo() {
     }
   }, []);
 
-  // ... rest of your component JSX remains unchanged ...
+  // Open fullscreen modal with given video ID
+  const openFullscreen = (videoId) => {
+    setFullscreenVideoId(videoId);
+  };
+
+  // Close fullscreen modal
+  const closeFullscreen = () => {
+    setFullscreenVideoId(null);
+  };
+
+  // Get video data for the fullscreen modal
+  const fullscreenVideo = videos.find((v) => v.id === fullscreenVideoId);
+
+  return (
+    <div style={{ padding: 16, fontFamily: "Arial, sans-serif" }}>
+      {/* Dark mode toggle */}
+      <button onClick={toggleDarkMode} style={{ marginBottom: 12 }}>
+        {darkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
+      </button>
+
+      {/* Premium toggle */}
+      <button onClick={togglePremium} style={{ marginLeft: 8, marginBottom: 12 }}>
+        {isPremium ? "Disable Premium" : "Enable Premium"}
+      </button>
+
+      {/* Music Controls */}
+      <div style={{ marginBottom: 16 }}>
+        <button onClick={toggleMusic}>
+          {isMusicPlaying ? "Pause Music" : "Play Music"}
+        </button>
+        <button onClick={playPrevTrack} style={{ marginLeft: 8 }}>
+          Prev Track
+        </button>
+        <button onClick={playNextTrack} style={{ marginLeft: 8 }}>
+          Next Track
+        </button>
+        <span style={{ marginLeft: 12 }}>
+          Now Playing: {backgroundTracks[bgTrackIndex].title} by {backgroundTracks[bgTrackIndex].artist}
+        </span>
+      </div>
+
+      {/* Audio element for background music */}
+      <audio ref={audioRef} loop preload="auto" key={backgroundTracks[bgTrackIndex].url}>
+        <source src={backgroundTracks[bgTrackIndex].url} type="audio/mpeg" />
+        Your browser does not support the audio element.
+      </audio>
+
+      {/* Tag filter */}
+      <div style={{ marginBottom: 16 }}>
+        <label htmlFor="tag-select">Filter by tag: </label>
+        <select
+          id="tag-select"
+          value={selectedTag}
+          onChange={(e) => setSelectedTag(e.target.value)}
+        >
+          <option value="all">All</option>
+          {availableTags.map((tag) => (
+            <option key={tag} value={tag}>
+              {tag.charAt(0).toUpperCase() + tag.slice(1)}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {/* Videos list */}
+      {loading ? (
+        <p>Loading videos...</p>
+      ) : filteredVideos.length === 0 ? (
+        <p>No videos found for selected filters.</p>
+      ) : (
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+            gap: 16,
+          }}
+        >
+          {filteredVideos.map((video) => (
+            <div
+              key={video.id}
+              onClick={() => openFullscreen(video.id)}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") openFullscreen(video.id);
+              }}
+              style={{
+                cursor: "pointer",
+                border: "1px solid #ddd",
+                borderRadius: 8,
+                overflow: "hidden",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                background: darkMode ? "#222" : "#fff",
+                color: darkMode ? "#eee" : "#000",
+              }}
+              aria-label={`Open fullscreen video: ${video.snippet.title}`}
+            >
+              <img
+                src={video.snippet.thumbnails.medium.url}
+                alt={video.snippet.title}
+                style={{ width: "100%", height: "auto" }}
+              />
+              <div style={{ padding: "8px" }}>
+                <h3 style={{ margin: "8px 0", fontSize: "1rem" }}>
+                  {video.snippet.title}
+                </h3>
+                <p style={{ fontSize: "0.875rem", color: darkMode ? "#ccc" : "#555" }}>
+                  {video.snippet.channelTitle}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Fullscreen modal */}
+      {fullscreenVideoId && fullscreenVideo && (
+        <div
+          className="fullscreen-modal"
+          role="dialog"
+          aria-modal="true"
+          aria-label={`Playing video: ${fullscreenVideo.snippet.title}`}
+          onClick={closeFullscreen}
+          tabIndex={-1}
+        >
+          <button
+            className="fullscreen-close-btn"
+            aria-label="Close fullscreen video"
+            onClick={(e) => {
+              e.stopPropagation();
+              closeFullscreen();
+            }}
+          >
+            ×
+          </button>
+          <iframe
+            src={`https://www.youtube.com/embed/${fullscreenVideo.id}?autoplay=1&controls=1`}
+            title={fullscreenVideo.snippet.title}
+            allow="autoplay; fullscreen"
+            allowFullScreen
+            frameBorder="0"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
+
+      <Footer />
+      <GoogleSearchEmbed />
+
+      <style>{`
+        .fullscreen-modal {
+          position: fixed;
+          inset: 0;
+          background: rgba(0,0,0,0.9);
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          z-index: 1000;
+          padding: 1rem;
+        }
+        .fullscreen-modal iframe {
+          width: 90vw;
+          height: 80vh;
+          border-radius: 0.5rem;
+          box-shadow: 0 0 20px rgba(0,0,0,0.7);
+        }
+        .fullscreen-close-btn {
+          position: fixed;
+          top: 1rem;
+          right: 1rem;
+          background: white;
+          border: none;
+          border-radius: 50%;
+          width: 2.5rem;
+          height: 2.5rem;
+          font-size: 1.5rem;
+          cursor: pointer;
+          z-index: 1001;
+          box-shadow: 0 0 10px rgba(0,0,0,0.5);
+          transition: background-color 0.2s ease;
+        }
+        .fullscreen-close-btn:hover {
+          background: #eee;
+        }
+      `}</style>
+    </div>
+  );
 }
