@@ -40,7 +40,9 @@ export default function AffiliateSidebar() {
   useEffect(() => {
     async function fetchDeals() {
       try {
-        const res = await fetch('/api/affiliate-search?query=');
+        // Use a valid default query instead of empty string
+        const defaultQuery = "shoes";
+        const res = await fetch(`/api/affiliate-search?query=${defaultQuery}`);
         const data = await res.json();
         console.log("Fetched products on mount:", data); // Debug log
         setProducts(Array.isArray(data) ? data : []);
