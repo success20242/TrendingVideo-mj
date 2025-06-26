@@ -1,4 +1,4 @@
-"use server"
+"use server";
 
 import { AFFILIATE_NICHES } from "@/app/constants/affiliate-niches";
 
@@ -15,23 +15,23 @@ export interface Product {
 }
 
 // Helper: Classify a product into a niche based on title/snippet.
-function classifyNiche(title: string, snippet: string = ""): { name: string, icon: string } | null {
+// Returns "Uncategorized" if no match.
+function classifyNiche(title: string, snippet: string = ""): { name: string; icon: string } {
   const text = (title + " " + snippet).toLowerCase();
   for (const niche of AFFILIATE_NICHES) {
     if (niche.keywords.some(keyword => text.includes(keyword))) {
       return { name: niche.name, icon: niche.icon };
     }
   }
-  return null;
+  // Fallback niche
+  return { name: "Uncategorized", icon: "❓" };
 }
 
 // Helper: Try to extract a price from CSE pagemap or snippet
 function extractPrice(item: any): string | undefined {
-  // Try from pagemap
   if (item.pagemap?.offer?.[0]?.price) {
     return item.pagemap.offer[0].price;
   }
-  // Try to parse price from snippet
   const priceRegex = /\$\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{2})?/;
   const snippet = item.snippet ?? "";
   const match = snippet.match(priceRegex);
@@ -57,7 +57,6 @@ export async function searchAffiliateProducts(query: string): Promise<Product[]>
   const products: Product[] = [];
   const encodedQuery = encodeURIComponent(query);
 
-  // 1. Google Custom Search API
   const googleApiKey = process.env.GOOGLE_CSE_API_KEY;
   const googleEngineId = process.env.NEXT_PUBLIC_CSE_ID;
   const amazonAssociateId = process.env.NEXT_PUBLIC_AMAZON_ASSOCIATE_ID;
@@ -73,6 +72,7 @@ export async function searchAffiliateProducts(query: string): Promise<Product[]>
       `https://www.googleapis.com/customsearch/v1?q=${encodedQuery}&key=${googleApiKey}&cx=${googleEngineId}`,
       { next: { revalidate: 3600 } }
     );
+
     if (!googleResponse.ok) {
       console.error(
         "Google Custom Search API error:",
@@ -81,6 +81,7 @@ export async function searchAffiliateProducts(query: string): Promise<Product[]>
       );
       return products;
     }
+
     const googleData = await googleResponse.json();
 
     if (Array.isArray(googleData.items)) {
@@ -93,22 +94,17 @@ export async function searchAffiliateProducts(query: string): Promise<Product[]>
         let link = item.link ?? "#";
         let source: Product["source"] = "Google Search";
 
-        // Affiliate-ize Amazon links
         if (link.includes("amazon.com")) {
           link = addAmazonAffiliateTag(link, amazonAssociateId);
           source = "Amazon";
-        }
-        // Affiliate-ize eBay links
-        else if (link.includes("ebay.com")) {
+        } else if (link.includes("ebay.com")) {
           link = addEbayPartnerId(link, ebayPartnerId);
           source = "eBay";
         }
 
-        // Classify/filter by niche
+        // Always assign a niche, even if Uncategorized
         const classification = classifyNiche(item.title ?? "", item.snippet ?? "");
-        if (!classification) continue; // skip non-niche products
 
-        // Extract price and description
         const price = extractPrice(item);
         const snippet = item.snippet;
 
@@ -121,7 +117,7 @@ export async function searchAffiliateProducts(query: string): Promise<Product[]>
           isSponsored: source !== "Google Search",
           snippet,
           niche: classification.name,
-          nicheIcon: classification.icon
+          nicheIcon: classification.icon,
         });
       }
     }
