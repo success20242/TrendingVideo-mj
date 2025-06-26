@@ -8,30 +8,34 @@ export default function Page() {
   const [showSidebar, setShowSidebar] = useState(true);
 
   return (
-    <div style={{
-      display: "flex",
-      flexDirection: "row",
-      minHeight: "100vh",
-      maxWidth: "100%",
-      overflowX: "hidden"
-    }}>
-      {/* Sidebar - hidden on mobile */}
-      {showSidebar && (
-        <div style={{
-          width: 320,
-          flexShrink: 0,
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "row",
+        minHeight: "100vh",
+        maxWidth: "100%",
+        overflowX: "hidden",
+      }}
+    >
+      {/* Sidebar */}
+      <aside
+        className={showSidebar ? "sidebar" : "sidebar hidden"}
+        aria-hidden={!showSidebar}
+        style={{
           borderRight: "1px solid #eee",
-          background: "#f9f9f9"
-        }}>
-          <AffiliateSidebar />
-        </div>
-      )}
+          background: "#f9f9f9",
+        }}
+      >
+        <AffiliateSidebar />
+      </aside>
 
       {/* Main Content */}
-      <div style={{ flex: 1, padding: "16px" }}>
+      <main style={{ flex: 1, padding: "16px" }}>
         {/* Toggle button for mobile */}
-        <button 
+        <button
+          aria-label={showSidebar ? "Hide deals sidebar" : "Show deals sidebar"}
           onClick={() => setShowSidebar(!showSidebar)}
+          className="toggle-btn"
           style={{
             marginBottom: 16,
             padding: "8px 12px",
@@ -40,20 +44,33 @@ export default function Page() {
             borderRadius: 4,
             background: "#fff",
             display: "none",
+            cursor: "pointer",
           }}
-          className="toggle-btn"
         >
           {showSidebar ? "Hide" : "Show"} Deals
         </button>
 
         <TrendingVideo />
-      </div>
+      </main>
 
-      {/* Media query styling for toggle button */}
+      {/* Styles */}
       <style>{`
+        aside.sidebar {
+          width: 320px;
+          flex-shrink: 0;
+          transition: width 0.3s ease, opacity 0.3s ease;
+          opacity: 1;
+          overflow: visible;
+        }
+        aside.sidebar.hidden {
+          width: 0;
+          opacity: 0;
+          overflow: hidden;
+        }
+
         @media (max-width: 768px) {
           .toggle-btn {
-            display: block;
+            display: inline-block;
           }
         }
       `}</style>
