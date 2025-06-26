@@ -1,10 +1,16 @@
 export const AFFILIATE_NICHES = [
   {
-    name: "Tech & Gadgets",
+    name: "Tech",
     keywords: [
       "smartphone", "phone", "laptop", "tablet", "wearable", "smart home",
-      "gaming", "headphones", "earbuds", "monitor", "camera", "console",
-      "router", "gadget"
+      "monitor", "camera", "router"
+    ],
+    icon: "🖥️"
+  },
+  {
+    name: "Gadgets",
+    keywords: [
+      "gaming", "headphones", "earbuds", "console", "gadget"
     ],
     icon: "📱"
   },
