@@ -40,11 +40,10 @@ export default function AffiliateSidebar() {
   useEffect(() => {
     async function fetchDeals() {
       try {
-        // Use a valid default query instead of empty string
-        const defaultQuery = "shoes";
+        const defaultQuery = "shoes"; // ✅ Updated to prevent 400 error
         const res = await fetch(`/api/affiliate-search?query=${defaultQuery}`);
         const data = await res.json();
-        console.log("Fetched products on mount:", data); // Debug log
+        console.log("Fetched products on mount:", data);
         setProducts(Array.isArray(data) ? data : []);
       } catch (err) {
         console.error("Failed to fetch default deals:", err);
@@ -61,7 +60,7 @@ export default function AffiliateSidebar() {
     try {
       const res = await fetch(`/api/affiliate-search?query=${encodeURIComponent(query)}`);
       const data = await res.json();
-      console.log("Fetched products on search:", data); // Debug log
+      console.log("Fetched products on search:", data);
       setProducts(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error("Search failed:", err);
@@ -70,7 +69,6 @@ export default function AffiliateSidebar() {
     setLoading(false);
   }
 
-  // Improved filter: case-insensitive match between product niche and selectedCategory
   const filteredProducts =
     Array.isArray(products)
       ? selectedCategory === "All"
