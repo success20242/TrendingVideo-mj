@@ -1,20 +1,8 @@
 "use client";
+
 import { useState, useEffect } from "react";
 import ProductCard from "./ProductCard";
-
-const AFFILIATE_NICHES = [
-  { name: "Tech & Gadgets", icon: "📱" },
-  { name: "Health & Wellness", icon: "💪" },
-  { name: "Personal Finance & Investing", icon: "💰" },
-  { name: "Home Improvement & DIY", icon: "🏠" },
-  { name: "Beauty & Skincare", icon: "💄" },
-  { name: "Online Learning & E-Learning Tools", icon: "🎓" },
-  { name: "Sustainable & Eco-Friendly Products", icon: "🌱" },
-  { name: "Gaming & Esports", icon: "🎮" },
-  { name: "Pet Care & Products", icon: "🐾" },
-  { name: "Travel & Outdoor Gear", icon: "🌍" },
-  { name: "Uncategorized", icon: "❓" } // Added fallback niche here
-];
+import { AFFILIATE_NICHES } from "@/app/constants/affiliate-niches";
 
 interface Product {
   title: string;
@@ -34,12 +22,17 @@ export default function AffiliateSidebar() {
   const [loading, setLoading] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState("All");
 
-  const categories = [{ name: "All", icon: "🔍" }, ...AFFILIATE_NICHES];
+  // Build categories dynamically from AFFILIATE_NICHES + All + Uncategorized
+  const categories = [
+    { name: "All", icon: "🔍" },
+    ...AFFILIATE_NICHES,
+    { name: "Uncategorized", icon: "❓" },
+  ];
 
   useEffect(() => {
     async function fetchDeals() {
       try {
-        const defaultQuery = "shoes";
+        const defaultQuery = "shoes"; // or any default you want
         const res = await fetch(`/api/affiliate-search?query=${defaultQuery}`);
         const data = await res.json();
         setProducts(Array.isArray(data) ? data : []);
@@ -53,7 +46,7 @@ export default function AffiliateSidebar() {
 
   async function handleSearch(e: React.FormEvent) {
     e.preventDefault();
-    if (!query.trim()) return; // Prevent empty search
+    if (!query.trim()) return;
 
     setLoading(true);
     setProducts([]);
@@ -70,7 +63,7 @@ export default function AffiliateSidebar() {
     setLoading(false);
   }
 
-  // Case-insensitive filter by niche name
+  // Filter products by selected category (case-insensitive)
   const filteredProducts =
     Array.isArray(products)
       ? selectedCategory === "All"
