@@ -1,0 +1,76 @@
+[33maf51669[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m Update page.tsx
+[33m8747785[m Update page.tsx
+[33m9cdb6ae[m Update page.tsx
+[33md92a2fd[m Update affiliate-sidebar.tsx
+[33meea7d61[m Update affiliate-sidebar.tsx
+[33m0758df3[m Update page.tsx
+[33m2696257[m Update page.tsx
+[33ma1c68ec[m Update affiliate-sidebar.tsx
+[33m93fa969[m Update page.tsx
+[33m8482567[m Update affiliate-sidebar.tsx
+[33mcf1e7ff[m Update affiliate-sidebar.tsx
+[33maa6d26d[m Update affiliate-sidebar.tsx
+[33m1f69d36[m Update affiliate-sidebar.tsx
+[33m9033624[m Update affiliate-search.ts
+[33m0bc3cbd[m Create affiliate-niches.ts
+[33mf82892e[m Update affiliate-search.ts
+[33ma0e193b[m Update page.tsx
+[33mcbd08d7[m Update affiliate-sidebar.tsx
+[33m1a78410[m Update affiliate-sidebar.tsx
+[33mc1d144b[m Update route.ts
+[33m2cbca37[m Update affiliate-search.ts
+[33m43e6a0f[m Update layout.tsx
+[33m00ee1d8[m Update affiliate-sidebar.tsx
+[33m617ed6c[m Update affiliate search action with fixes for API keys and affiliate links
+[33m788181e[m feat: fix client-side access to server action
+[33m447f432[m feat: fix client-side access to server action and update environment variables
+[33me2fdbc2[m feat: fix client-side access to server action
+[33m2d1d2c8[m feat: prefix environment variables with NEXT_PUBLIC_ for client-side access
+[33mec6ee1e[m feat: update AffiliateSidebar component with new props and interface
+[33m1faa19e[m feat: update AffiliateSidebar to integrate with shadcn/ui Sidebar
+[33m86f2312[m feat: add affiliate price comparison sidebar
+[33mb9be46b[m feat: remove NextAuth and replace with localStorage
+[33md4d9d75[m fix: disable session polling to resolve CLIENT_FETCH_ERROR
+[33mfc0ab54[m feat: add pagination to admin user list
+[33mcaeffa1[m feat: add user registration and login tests
+[33m60a836e[m feat: migrate auth and PayPal to App Router
+[33m41a4afb[m feat: wrap App-Router pages with SessionProvider
+[33m3ac4a61[m feat: add user profile page and logout functionality
+[33mde0b77a[m feat: add owner access via environment variable
+[33md2a0e01[m feat: secure video access with dynamic App Router
+[33m253e53f[m feat: migrate watch pages to App Router for dynamic data fetching
+[33mf92ea0b[m chore: remove outdated video watch page files
+[33ma58ef70[m chore: remove outdated video watch page files
+[33m76d5431[m chore: remove outdated video watch page files
+[33md7b142d[m feat: add dynamic watch page using Next.js Pages Router
+[33md5338c4[m feat: enhance SEO for dynamic watch pages
+[33mf3b0896[m feat: optimize video watch pages for SEO
+[33m5053274[m fix: resolve sitemap AST parsing error with video pages
+[33mab48219[m fix: resolve sitemap AST parsing error with video pages
+[33m5c88dc0[m feat: automate sitemap and robots.txt generation with next-sitemap
+[33m158062f[m fix: use private API key in server-only code
+[33ma6225b2[m feat: enhance SEO with dynamic sitemap and robots.txt
+[33mcafb031[m feat: add dynamic sitemap generation with next-sitemap
+[33mef5e068[m feat: update sitemap.xml for SEO compliance
+[33md15582c[m feat: add Google verification file to public directory
+[33m264cb0c[m feat: update Terms & Conditions page with new content and metadata
+[33me1dd867[m feat: update Privacy Policy, footer, and add cookie consent
+[33ma89d695[m feat: add Privacy Policy & Terms pages and new Footer component
+[33m76227e5[m feat: add AdSense verification meta tag in Next.js App Router
+[33mc22364d[m feat: add AdSense script to app/layout.tsx for proper verification
+[33me0bfdfd[m feat: add AdSense verification script to app/layout.tsx
+[33md8bd186[m feat: add Google AdSense script to app/layout.tsx
+[33ma65db8d[m feat: add UAE to country selection list
+[33mf179b05[m feat: update metadata in app/layout.tsx with new tags and GA config
+[33m3376d7b[m feat: add "3Kings Boutique" section and footer link
+[33ma13e6f6[m feat: add Facebook link to trending-video component
+[33mff423d6[m feat: update Open Graph image dimensions to 600x600
+[33mfcfab7c[m feat: update Google Analytics tag with new gtag.js snippet
+[33m1e89a3a[m feat: add exact Google Tag snippet to app/layout.tsx
+[33m9339832[m feat: update Google Analytics Measurement ID to G-9MMSJHGT3W
+[33md167352[m feat: update Google Analytics tracking ID
+[33mcd56020[m feat: center PayPal buttons using flexbox
+[33mce01761[m feat: center PayPal buttons using flexbox
+[33me5114d0[m fix: debug YouTube API key loading issue
+[33m6bf5593[m sync main changes to TrendingVideo-mj project
+[33mc4f4a24[m Initialized repository for project Build from attached file
