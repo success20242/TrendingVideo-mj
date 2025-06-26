@@ -34,15 +34,17 @@ export default function AffiliateSidebar() {
   const [loading, setLoading] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState("All");
 
+  // Add "All" category at the start
   const categories = [{ name: "All", icon: "🔍" }, ...AFFILIATE_NICHES];
 
   useEffect(() => {
     async function fetchDeals() {
       try {
+        // Use a valid default query instead of empty string
         const defaultQuery = "shoes";
         const res = await fetch(`/api/affiliate-search?query=${defaultQuery}`);
         const data = await res.json();
-        console.log("Fetched products on mount:", data);
+        console.log("Fetched products on mount:", data); // Debug log
         setProducts(Array.isArray(data) ? data : []);
       } catch (err) {
         console.error("Failed to fetch default deals:", err);
@@ -54,13 +56,12 @@ export default function AffiliateSidebar() {
 
   async function handleSearch(e: React.FormEvent) {
     e.preventDefault();
-    if (!query.trim()) return; // prevent empty query
     setLoading(true);
     setProducts([]);
     try {
       const res = await fetch(`/api/affiliate-search?query=${encodeURIComponent(query)}`);
       const data = await res.json();
-      console.log("Fetched products on search:", data);
+      console.log("Fetched products on search:", data); // Debug log
       setProducts(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error("Search failed:", err);
@@ -69,12 +70,15 @@ export default function AffiliateSidebar() {
     setLoading(false);
   }
 
+  // Flexible filter: includes() for case-insensitive partial match between product niche and selectedCategory
   const filteredProducts =
     Array.isArray(products)
       ? selectedCategory === "All"
         ? products
         : products.filter(
-            (p) => p.niche?.toLowerCase() === selectedCategory.toLowerCase()
+            (p) =>
+              p.niche &&
+              p.niche.toLowerCase().includes(selectedCategory.toLowerCase())
           )
       : [];
 
