@@ -55,7 +55,7 @@ module.exports = {
   },
 
   // Add dynamic video URLs with <video:video> metadata
-  additionalPaths: async (config) => {
+  additionalPaths: async () => {
     const videos = await getTrendingVideos();
 
     return videos.map((video) => ({
@@ -63,13 +63,14 @@ module.exports = {
       changefreq: "weekly",
       priority: 0.8,
       lastmod: video.publishedAt,
-      alternateRefs: [], // optional for multi-language sites
       video: [
         {
           "video:thumbnail_loc": video.thumbnail_loc,
           "video:title": video.title,
           "video:description": video.description,
-          "video:player_loc": `https://www.youtube.com/embed/${video.id}`,
+          "video:player_loc": {
+            "@data": `https://www.youtube.com/embed/${video.id}`
+          },
           "video:publication_date": video.publishedAt,
         },
       ],
