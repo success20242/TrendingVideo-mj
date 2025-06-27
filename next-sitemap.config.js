@@ -2,7 +2,6 @@
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://trendifyhub.vercel.app"
 
-/* Helper — fetches trending video IDs and details for the sitemap */
 async function getTrendingVideos(maxResults = 10) {
   const apiKey = process.env.YOUTUBE_API_KEY
   if (!apiKey) return []
@@ -21,7 +20,7 @@ async function getTrendingVideos(maxResults = 10) {
           id: i.id,
           title: i.snippet?.title || "Trending video",
           description: i.snippet?.description || "Trending YouTube video",
-          thumbnail: i.snippet?.thumbnails?.medium?.url || `https://i.ytimg.com/vi/${i.id}/mqdefault.jpg`,
+          thumbnail_loc: i.snippet?.thumbnails?.medium?.url || `https://i.ytimg.com/vi/${i.id}/mqdefault.jpg`,
           publishedAt: i.snippet?.publishedAt || new Date().toISOString(),
         }))
       : []
@@ -53,7 +52,7 @@ module.exports = {
         {
           title: video.title,
           description: video.description,
-          thumbnail_loc: video.thumbnail,
+          thumbnail_loc: video.thumbnail_loc,
           player_loc: `https://www.youtube.com/embed/${video.id}`,
           publication_date: video.publishedAt,
         },
