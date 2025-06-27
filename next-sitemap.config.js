@@ -2,13 +2,12 @@
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://trendifyhub.vercel.app"
 
-/* Helper — fetches a handful of trending IDs for the sitemap */
-async function getTrendingVideoIds(maxResults = 10) {
+/* Helper — fetches trending video IDs and details for the sitemap */
+async function getTrendingVideos(maxResults = 10) {
   const apiKey = process.env.YOUTUBE_API_KEY
-  /* Fallback: if key missing, return empty list so the build still succeeds */
   if (!apiKey) return []
 
-  const url = `https://www.googleapis.com/youtube/v3/videos?part=id,snippet&chart=mostPopular&maxResults=${maxResults}&regionCode=US&key=${apiKey}`
+  const url = `https://www.googleapis.com/youtube/v3/videos?part=snippet&chart=mostPopular&maxResults=${maxResults}&regionCode=US&key=${apiKey}`
 
   try {
     const res = await fetch(url)
@@ -43,9 +42,8 @@ module.exports = {
     policies: [{ userAgent: "*", allow: "/" }],
   },
 
-  /* Append dynamic watch pages */
   additionalPaths: async (config) => {
-    const videos = await getTrendingVideoIds()
+    const videos = await getTrendingVideos()
     return videos.map((video) => ({
       loc: `/watch/${video.id}`,
       changefreq: "weekly",
