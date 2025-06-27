@@ -8,7 +8,7 @@ async function getTrendingVideoIds(maxResults = 10) {
   /* Fallback: if key missing, return empty list so the build still succeeds */
   if (!apiKey) return []
 
-  const url = `https://www.googleapis.com/youtube/v3/videos?part=id&chart=mostPopular&maxResults=${maxResults}&regionCode=US&key=${apiKey}`
+  const url = `https://www.googleapis.com/youtube/v3/videos?part=id,snippet&chart=mostPopular&maxResults=${maxResults}&regionCode=US&key=${apiKey}`
 
   try {
     const res = await fetch(url)
@@ -17,7 +17,15 @@ async function getTrendingVideoIds(maxResults = 10) {
       return []
     }
     const data = await res.json()
-    return Array.isArray(data.items) ? data.items.map((i) => i.id) : []
+    return Array.isArray(data.items)
+      ? data.items.map((i) => ({
+          id: i.id,
+          title: i.snippet?.title || "Trending video",
+          description: i.snippet?.description || "Trending YouTube video",
+          thumbnail: i.snippet?.thumbnails?.medium?.url || `https://i.ytimg.com/vi/${i.id}/mqdefault.jpg`,
+          publishedAt: i.snippet?.publishedAt || new Date().toISOString(),
+        }))
+      : []
   } catch (err) {
     console.error("Error fetching trending videos for sitemap:", err)
     return []
@@ -37,18 +45,19 @@ module.exports = {
 
   /* Append dynamic watch pages */
   additionalPaths: async (config) => {
-    const ids = await getTrendingVideoIds()
-    return ids.map((videoId) => ({
-      loc: `/watch/${videoId}`,
+    const videos = await getTrendingVideoIds()
+    return videos.map((video) => ({
+      loc: `/watch/${video.id}`,
       changefreq: "weekly",
       priority: 0.8,
       lastmod: new Date().toISOString(),
-      /* Basic video:video block – extend if you need more fields */
       video: [
         {
-          title: "Trending video",
-          thumbnail_loc: `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg`,
-          player_loc: `https://www.youtube.com/embed/${videoId}`,
+          title: video.title,
+          description: video.description,
+          thumbnail_loc: video.thumbnail,
+          player_loc: `https://www.youtube.com/embed/${video.id}`,
+          publication_date: video.publishedAt,
         },
       ],
     }))
