@@ -447,6 +447,7 @@ export default function TrendingVideo() {
                         className="video-iframe group-hover:scale-[1.02] transition-transform duration-200"
                         src={
                           isExpanded
+                            // Controls and unmuted enabled for expanded player (confirmed)
                             ? `https://www.youtube.com/embed/${video.id}?autoplay=1&controls=1&mute=0&rel=0&modestbranding=1`
                             : (isHovered
                               ? `https://www.youtube.com/embed/${video.id}?autoplay=1&mute=1&loop=1&playlist=${video.id}&controls=0&modestbranding=1&rel=0`
