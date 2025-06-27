@@ -6,6 +6,9 @@ export default function MyApp({ Component, pageProps }) {
   return (
     <>
       <Head>
+        <title>🎥 TrendifyTube — Trending YouTube & Smart Shopping Deals</title>
+        <meta name="description" content="Instantly explore trending YouTube videos by country and discover relevant Amazon and 3kings boutique deals, all in one place with TrendifyTube. Enjoy entertainment, smart shopping, and premium features—tailored for a global audience." />
+        <meta name="robots" content="index,follow" />
         {/* AdSense script */}
         <script
           async
