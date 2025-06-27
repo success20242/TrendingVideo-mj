@@ -1,3 +1,9 @@
+# *
 User-agent: *
 Allow: /
-Sitemap: https://trendifyhub.vercel.app/api/sitemap
+
+# Host
+Host: https://trendifyhub.vercel.app
+
+# Sitemaps
+Sitemap: https://trendifyhub.vercel.app/sitemap.xml
