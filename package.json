@@ -4,8 +4,8 @@
   "private": true,
   "scripts": {
     "build": "next build",
-    "clean:sitemap": "rm -f public/sitemap*.xml public/robots.txt",
     "postbuild": "npm run clean:sitemap && next-sitemap",
+    "clean:sitemap": "rm -f public/sitemap*.xml public/robots.txt",
     "dev": "next dev",
     "lint": "next lint",
     "start": "next start"
