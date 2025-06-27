@@ -1,6 +1,6 @@
 /** @type {import('next-sitemap').IConfig} */
 
-const SITE_URL = "https://trendifyhub.vercel.app"
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://trendifyhub.vercel.app"
 
 /* Helper — fetches a handful of trending IDs for the sitemap */
 async function getTrendingVideoIds(maxResults = 10) {
@@ -12,10 +12,14 @@ async function getTrendingVideoIds(maxResults = 10) {
 
   try {
     const res = await fetch(url)
-    if (!res.ok) return []
+    if (!res.ok) {
+      console.error("Failed to fetch trending videos: HTTP", res.status)
+      return []
+    }
     const data = await res.json()
     return Array.isArray(data.items) ? data.items.map((i) => i.id) : []
-  } catch {
+  } catch (err) {
+    console.error("Error fetching trending videos for sitemap:", err)
     return []
   }
 }
