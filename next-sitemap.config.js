@@ -48,15 +48,13 @@ module.exports = {
       changefreq: "weekly",
       priority: 0.8,
       lastmod: new Date().toISOString(),
-      video: [
-        {
-          title: video.title,
-          description: video.description,
-          thumbnail_loc: video.thumbnail_loc,
-          player_loc: `https://www.youtube.com/embed/${video.id}`,
-          publication_date: video.publishedAt,
-        },
-      ],
+      video: {
+        title: video.title,
+        description: video.description,
+        thumbnail_loc: video.thumbnail_loc,
+        player_loc: `https://www.youtube.com/embed/${video.id}`,
+        publication_date: video.publishedAt,
+      },
     }))
   },
 }
