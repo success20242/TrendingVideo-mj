@@ -49,6 +49,13 @@ export default function TrendingVideo() {
   const [hoveredVideoId, setHoveredVideoId] = useState(null);
   const [canAutoplay, setCanAutoplay] = useState(true); // autoplay detection
 
+  // Modal state for expanded video view
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalVideo, setModalVideo] = useState(null);
+
+  // For focusing close button for a11y
+  const closeBtnRef = useRef(null);
+
   // Background music carousel states
   const [bgTrackIndex, setBgTrackIndex] = useState(0);
   const audioRef = useRef(null);
@@ -156,6 +163,13 @@ export default function TrendingVideo() {
     }
   }, []);
 
+  // Focus close button when modal opens (accessibility)
+  useEffect(() => {
+    if (modalOpen && closeBtnRef.current) {
+      closeBtnRef.current.focus();
+    }
+  }, [modalOpen]);
+
   // Soundwave animation SVG component
   const SoundWave = () => (
     <svg
@@ -199,6 +213,46 @@ export default function TrendingVideo() {
     </svg>
   );
 
+  // Helper: open modal with video info
+  const openModal = (video) => {
+    setModalVideo(video);
+    setModalOpen(true);
+    document.body.style.overflow = "hidden";
+  };
+
+  // Helper: close modal
+  const closeModal = () => {
+    setModalOpen(false);
+    setModalVideo(null);
+    document.body.style.overflow = "";
+  };
+
+  // Helper: fullscreen the modal iframe
+  const fullscreenIframe = () => {
+    const iframe = document.getElementById("modal-iframe");
+    if (iframe && iframe.requestFullscreen) {
+      iframe.requestFullscreen();
+    } else if (iframe && iframe.webkitRequestFullscreen) {
+      iframe.webkitRequestFullscreen();
+    } else if (iframe && iframe.mozRequestFullScreen) {
+      iframe.mozRequestFullScreen();
+    } else if (iframe && iframe.msRequestFullscreen) {
+      iframe.msRequestFullscreen();
+    }
+  };
+
+  // ESC to close modal
+  useEffect(() => {
+    if (!modalOpen) return;
+    const handleEsc = (e) => {
+      if (e.key === "Escape") {
+        closeModal();
+      }
+    };
+    window.addEventListener("keydown", handleEsc);
+    return () => window.removeEventListener("keydown", handleEsc);
+  }, [modalOpen]);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-100 via-white to-pink-100 dark:from-gray-800 dark:to-gray-900 px-6 pt-6 pb-20 transition-colors duration-300 relative">
       <style>{`
@@ -239,7 +293,154 @@ export default function TrendingVideo() {
           border-radius: 0.75rem;
           transition: opacity 0.3s ease;
         }
+
+        /* MODAL styles */
+        .video-modal-overlay {
+          position: fixed;
+          z-index: 1000;
+          top: 0; left: 0; width: 100vw; height: 100vh;
+          background: rgba(0,0,0,0.87);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          animation: fadeIn 0.23s;
+        }
+        @keyframes fadeIn {
+          0% { opacity: 0; }
+          100% { opacity: 1; }
+        }
+        .video-modal-content {
+          position: relative;
+          background: none;
+          border-radius: 1.5rem;
+          box-shadow: 0 8px 32px 0 rgba(0,0,0,0.42);
+          max-width: 92vw;
+          max-height: 86vh;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+        }
+        .video-modal-iframebox {
+          position: relative;
+          width: 80vw;
+          max-width: 900px;
+          aspect-ratio: 16/9;
+          margin: 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: #111;
+          border-radius: 1rem;
+          overflow: hidden;
+          box-shadow: 0 4px 24px 0 rgba(0,0,0,0.32);
+        }
+        .video-modal-close {
+          position: absolute;
+          top: -54px;
+          right: 0;
+          background: rgba(30,30,30,0.87);
+          color: #fff;
+          border: none;
+          font-size: 2rem;
+          border-radius: 50%;
+          width: 44px;
+          height: 44px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          box-shadow: 0 2px 6px 0 rgba(0,0,0,0.2);
+          z-index: 10;
+        }
+        .video-modal-close:focus {
+          outline: 2px solid #fff;
+          outline-offset: 2px;
+        }
+        .video-modal-title {
+          color: #fff;
+          margin-top: 0.9em;
+          font-size: 1.35rem;
+          font-weight: bold;
+          text-align: center;
+          text-shadow: 0 1px 6px rgba(0,0,0,0.5);
+        }
+        .video-modal-controls {
+          margin-top: 1.2em;
+          display: flex;
+          gap: 1.5em;
+          align-items: center;
+          justify-content: center;
+        }
+        .video-modal-fullscreen-btn {
+          background: rgba(255,255,255,0.16);
+          color: #fff;
+          border: none;
+          border-radius: 0.6em;
+          padding: 0.5em 1.3em;
+          font-size: 1.03em;
+          cursor: pointer;
+          transition: background 0.2s;
+        }
+        .video-modal-fullscreen-btn:hover {
+          background: rgba(255,255,255,0.33);
+        }
+        @media (max-width: 720px) {
+          .video-modal-iframebox { width: 98vw !important; }
+        }
       `}</style>
+
+      {/* Modal Overlay for full video playback */}
+      {modalOpen && modalVideo && (
+        <div
+          className="video-modal-overlay"
+          onClick={(e) => {
+            // Only close when background is clicked, not modal content itself
+            if (e.target.classList.contains("video-modal-overlay")) closeModal();
+          }}
+          aria-modal="true"
+          role="dialog"
+        >
+          <div className="video-modal-content">
+            <button
+              className="video-modal-close"
+              onClick={closeModal}
+              aria-label="Close modal"
+              ref={closeBtnRef}
+              tabIndex={0}
+            >
+              ✖
+            </button>
+            <div className="video-modal-iframebox">
+              <iframe
+                id="modal-iframe"
+                src={`https://www.youtube.com/embed/${modalVideo.id}?autoplay=1&controls=1&mute=0&rel=0&modestbranding=1`}
+                title={modalVideo.snippet.title}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+                allowFullScreen
+                frameBorder="0"
+                style={{ width: "100%", height: "100%" }}
+              />
+            </div>
+            <div className="video-modal-title">
+              {modalVideo.snippet.title}
+            </div>
+            <div className="video-modal-controls">
+              <button
+                className="video-modal-fullscreen-btn"
+                onClick={fullscreenIframe}
+              >
+                📺 Expand Fullscreen
+              </button>
+              <button
+                className="video-modal-fullscreen-btn"
+                onClick={closeModal}
+              >
+                ✖ Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="fixed top-0 left-0 w-full bg-black text-white py-2 text-center text-sm z-50 animate-pulse">
         📢 Now Trending Worldwide — Refresh for updates
@@ -384,7 +585,14 @@ export default function TrendingVideo() {
                     🔒 Subscribe to unlock
                   </div>
                 ) : (
-                  <div className="video-iframe-wrapper">
+                  <div
+                    className="video-iframe-wrapper"
+                    onClick={() => openModal(video)}
+                    tabIndex={0}
+                    style={{ cursor: "pointer" }}
+                    title="Click to expand video"
+                    aria-label="Click to expand video"
+                  >
                     {canAutoplay ? (
                       <iframe
                         className="video-iframe group-hover:scale-[1.02] transition-transform duration-200"
@@ -397,6 +605,8 @@ export default function TrendingVideo() {
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                         allowFullScreen
                         frameBorder="0"
+                        tabIndex={-1}
+                        aria-hidden="true"
                       />
                     ) : (
                       // Fallback to static image if autoplay is blocked
@@ -407,6 +617,12 @@ export default function TrendingVideo() {
                         loading="lazy"
                       />
                     )}
+                    {/* Overlay for click-to-expand */}
+                    <div className="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-30 transition rounded-xl flex items-center justify-center pointer-events-none">
+                      <span className="pointer-events-auto text-white text-3xl shadow-xl opacity-80 hover:opacity-100" style={{textShadow:"0 2px 8px #000"}} title="Expand video">
+                        📺
+                      </span>
+                    </div>
                   </div>
                 )}
 
