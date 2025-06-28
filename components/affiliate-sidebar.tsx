@@ -4,12 +4,15 @@ import { useState, useEffect } from "react";
 import ProductCard from "./ProductCard";
 import { AFFILIATE_NICHES } from "@/app/constants/affiliate-niches";
 
+// Expanded source list for future extensibility
+type AffiliateSource = "Amazon" | "eBay" | "Walmart" | "AliExpress" | "Google Search" | "Other";
+
 interface Product {
   title: string;
   imageUrl: string;
   price?: string;
   link: string;
-  source: "Amazon" | "eBay" | "Google Search";
+  source: AffiliateSource;
   isSponsored: boolean;
   snippet?: string;
   niche?: string;
@@ -31,10 +34,17 @@ export default function AffiliateSidebar() {
   const limit = 10;
   const [totalResults, setTotalResults] = useState(0);
 
+  // Dynamically build categories from fetched products!
+  const dynamicCategories = Array.from(
+    new Set(products.map((p) => p.niche || "Uncategorized"))
+  ).map((name) => {
+    const match = AFFILIATE_NICHES.find((n) => n.name === name);
+    return { name, icon: match?.icon || "❓" };
+  });
+
   const categories = [
     { name: "All", icon: "🔍" },
-    ...AFFILIATE_NICHES,
-    { name: "Uncategorized", icon: "❓" },
+    ...dynamicCategories,
   ];
 
   async function fetchProducts(searchQuery: string, pageNumber: number) {
@@ -99,7 +109,10 @@ export default function AffiliateSidebar() {
           {categories.map(({ name, icon }) => (
             <button
               key={name}
-              onClick={() => setSelectedCategory(name)}
+              onClick={() => {
+                setSelectedCategory(name);
+                setPage(1); // Always reset to page 1 on filter change
+              }}
               className={`text-sm px-3 py-1 rounded-full border ${
                 selectedCategory === name
                   ? "bg-teal-600 text-white"
