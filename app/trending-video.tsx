@@ -122,7 +122,8 @@ export default function TrendingVideo() {
 
   // Simple tag extraction from title (for demo)
   const extractTags = (video) => {
-    const title = video.snippet.title.toLowerCase();
+    // Defensive: ensure snippet and title exist
+    const title = typeof video?.snippet?.title === "string" ? video.snippet.title.toLowerCase() : "";
     return availableTags.filter((tag) => title.includes(tag));
   };
 
@@ -130,7 +131,7 @@ export default function TrendingVideo() {
   const filteredVideos =
     selectedTag === "all"
       ? videos
-      : videos.filter((video) => video.tags.includes(selectedTag));
+      : videos.filter((video) => Array.isArray(video.tags) && video.tags.includes(selectedTag));
 
   // Pagination for filtered videos
   const totalPages = Math.ceil(filteredVideos.length / VIDEOS_PER_PAGE);
@@ -553,7 +554,15 @@ export default function TrendingVideo() {
                 const isExpanded = expandedVideoId === video.id;
 
                 // Fallback GIF/thumbnail URL fallback for hover preview:
-                const gifFallbackUrl = video.snippet.thumbnails?.medium?.url || "";
+                const gifFallbackUrl = video?.snippet?.thumbnails?.medium?.url || "";
+
+                // Defensive: ensure snippet, title, and channelTitle exist
+                const title = typeof video?.snippet?.title === "string"
+                  ? video.snippet.title
+                  : "[No Title]";
+                const channelTitle = typeof video?.snippet?.channelTitle === "string"
+                  ? video.snippet.channelTitle
+                  : "[No Channel Title]";
 
                 return (
                   <div
@@ -561,7 +570,7 @@ export default function TrendingVideo() {
                     className={`relative bg-white dark:bg-gray-800 rounded-xl shadow-xl overflow-hidden group transition-all duration-300`}
                     onMouseEnter={() => setHoveredVideoId(video.id)}
                     onMouseLeave={() => setHoveredVideoId(null)}
-                    aria-label={video.snippet.title}
+                    aria-label={title}
                   >
                     {locked ? (
                       <div className="flex items-center justify-center h-60 bg-gray-200 dark:bg-gray-900 text-gray-600 dark:text-gray-300 font-bold rounded-xl">
@@ -584,7 +593,7 @@ export default function TrendingVideo() {
                                 ? `https://www.youtube.com/embed/${video.id}?autoplay=1&mute=1&loop=1&playlist=${video.id}&controls=0&modestbranding=1&rel=0`
                                 : `https://www.youtube.com/embed/${video.id}?controls=1&modestbranding=1&rel=0`
                             }
-                            title={video.snippet.title}
+                            title={title}
                             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                             allowFullScreen
                             frameBorder="0"
@@ -595,7 +604,7 @@ export default function TrendingVideo() {
                           // Fallback to static image if autoplay is blocked
                           <img
                             src={gifFallbackUrl}
-                            alt={`Preview thumbnail for ${video.snippet.title}`}
+                            alt={`Preview thumbnail for ${title}`}
                             className="fallback-gif"
                             loading="lazy"
                           />
@@ -612,17 +621,17 @@ export default function TrendingVideo() {
 
                     <div className="p-4">
                       <h2 className="text-lg font-bold text-gray-800 dark:text-white flex items-center">
-                        {video.snippet.title}
+                        {title}
                         <SoundWave />
                       </h2>
                       {!locked && (
                         <p className="text-sm text-gray-500 dark:text-gray-300">
-                          {video.snippet.channelTitle}
+                          {channelTitle}
                         </p>
                       )}
                       <a
                         href={`https://www.amazon.com/s?k=${encodeURIComponent(
-                          video.snippet.title
+                          title
                         )}&tag=qualitygood0d-21`}
                         target="_blank"
                         rel="noopener noreferrer"
@@ -686,14 +695,14 @@ export default function TrendingVideo() {
                 className="w-full rounded-lg"
                 style={{ height: "40vw", maxHeight: "60vh", minHeight: "240px" }}
                 src={`https://www.youtube.com/embed/${modalVideo.id}?autoplay=1&controls=1&mute=0&rel=0&modestbranding=1`}
-                title={modalVideo.snippet.title}
+                title={typeof modalVideo?.snippet?.title === "string" ? modalVideo.snippet.title : "[No Title]"}
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen
                 frameBorder="0"
               />
               <div className="mt-4 w-full text-center">
-                <h2 className="text-white text-lg font-bold">{modalVideo.snippet.title}</h2>
-                <p className="text-gray-300">{modalVideo.snippet.channelTitle}</p>
+                <h2 className="text-white text-lg font-bold">{typeof modalVideo?.snippet?.title === "string" ? modalVideo.snippet.title : "[No Title]"}</h2>
+                <p className="text-gray-300">{typeof modalVideo?.snippet?.channelTitle === "string" ? modalVideo.snippet.channelTitle : "[No Channel Title]"}</p>
               </div>
             </div>
           </div>
