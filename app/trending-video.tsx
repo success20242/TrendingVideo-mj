@@ -41,6 +41,14 @@ const availableTags = [
 
 const VIDEOS_PER_PAGE = 6;
 
+// Helper to extract the correct YouTube video ID for each video object
+function getVideoId(video) {
+  if (!video) return "";
+  if (typeof video.id === "string") return video.id;
+  if (video.id && typeof video.id.videoId === "string") return video.id.videoId;
+  return String(video.id || "");
+}
+
 export default function TrendingVideo() {
   const [videos, setVideos] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -50,7 +58,7 @@ export default function TrendingVideo() {
   const [isPremium, setIsPremium] = useState(false);
   const [selectedTag, setSelectedTag] = useState("all");
   const [hoveredVideoId, setHoveredVideoId] = useState(null);
-  const [canAutoplay, setCanAutoplay] = useState(true); // autoplay detection
+  const [canAutoplay, setCanAutoplay] = useState(true);
 
   // Inline expansion state for video
   const [expandedVideoId, setExpandedVideoId] = useState(null);
@@ -122,7 +130,6 @@ export default function TrendingVideo() {
 
   // Simple tag extraction from title (for demo)
   const extractTags = (video) => {
-    // Defensive: ensure snippet and title exist
     const title = typeof video?.snippet?.title === "string" ? video.snippet.title.toLowerCase() : "";
     return availableTags.filter((tag) => title.includes(tag));
   };
@@ -549,9 +556,10 @@ export default function TrendingVideo() {
             {/* Video grid: only show 6 per page */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {paginatedVideos.map((video, idx) => {
+                const videoId = getVideoId(video);
                 const locked = !isPremium && ((page-1)*VIDEOS_PER_PAGE + idx) >= 3;
-                const isHovered = hoveredVideoId === video.id;
-                const isExpanded = expandedVideoId === video.id;
+                const isHovered = hoveredVideoId === videoId;
+                const isExpanded = expandedVideoId === videoId;
 
                 // Fallback GIF/thumbnail URL fallback for hover preview:
                 const gifFallbackUrl = video?.snippet?.thumbnails?.medium?.url || "";
@@ -566,9 +574,9 @@ export default function TrendingVideo() {
 
                 return (
                   <div
-                    key={video.id}
+                    key={videoId}
                     className={`relative bg-white dark:bg-gray-800 rounded-xl shadow-xl overflow-hidden group transition-all duration-300`}
-                    onMouseEnter={() => setHoveredVideoId(video.id)}
+                    onMouseEnter={() => setHoveredVideoId(videoId)}
                     onMouseLeave={() => setHoveredVideoId(null)}
                     aria-label={title}
                   >
@@ -590,8 +598,8 @@ export default function TrendingVideo() {
                             className="video-iframe group-hover:scale-[1.02] transition-transform duration-200"
                             src={
                               isHovered
-                                ? `https://www.youtube.com/embed/${video.id}?autoplay=1&mute=1&loop=1&playlist=${video.id}&controls=0&modestbranding=1&rel=0`
-                                : `https://www.youtube.com/embed/${video.id}?controls=1&modestbranding=1&rel=0`
+                                ? `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&loop=1&playlist=${videoId}&controls=0&modestbranding=1&rel=0`
+                                : `https://www.youtube.com/embed/${videoId}?controls=1&modestbranding=1&rel=0`
                             }
                             title={title}
                             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -694,7 +702,7 @@ export default function TrendingVideo() {
               <iframe
                 className="w-full rounded-lg"
                 style={{ height: "40vw", maxHeight: "60vh", minHeight: "240px" }}
-                src={`https://www.youtube.com/embed/${modalVideo.id}?autoplay=1&controls=1&mute=0&rel=0&modestbranding=1`}
+                src={`https://www.youtube.com/embed/${getVideoId(modalVideo)}?autoplay=1&controls=1&mute=0&rel=0&modestbranding=1`}
                 title={typeof modalVideo?.snippet?.title === "string" ? modalVideo.snippet.title : "[No Title]"}
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen
