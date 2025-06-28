@@ -1,7 +1,7 @@
 import type React from "react";
 import type { Metadata } from "next";
-import { usePathname } from "next/navigation";
 import "./globals.css";
+import CanonicalTag from "./components/Canonical";
 
 // Static Metadata for Search Engines and Social Media
 export const metadata: Metadata = {
@@ -40,13 +40,6 @@ export const metadata: Metadata = {
     },
   },
 };
-
-// Dynamic Canonical Tag Component
-function CanonicalTag() {
-  const pathname = usePathname();
-  const canonical = `https://trendifyhub.vercel.app${pathname === "/" ? "" : pathname}`;
-  return <link rel="canonical" href={canonical} />;
-}
 
 // Root Layout
 export default function RootLayout({
