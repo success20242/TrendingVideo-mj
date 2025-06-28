@@ -244,7 +244,7 @@ export default function TrendingVideo() {
         {/* WhatsApp/Instagram use Open Graph tags */}
 
         {/* Adsense & monetization */}
-        <meta name="google-site-verification" content="YOUR_GOOGLE_SITE_VERIFICATION_TOKEN" />
+        <meta name="google-site-verification" content="G68a3mRZtGTDKcAOHvC2YFHpGavV38TRiQCNQgH2rE0" />
         {/* Replace the content with your actual Google site verification token */}
       </Head>
       <div className="min-h-screen bg-gradient-to-br from-indigo-100 via-white to-pink-100 dark:from-gray-800 dark:to-gray-900 px-6 pt-6 pb-20 transition-colors duration-300 relative">
