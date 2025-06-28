@@ -1,11 +1,14 @@
-import type React from "react" 
-import type { Metadata } from "next"
-import "./globals.css"
+import type React from "react";
+import type { Metadata } from "next";
+import { usePathname } from "next/navigation";
+import "./globals.css";
 
+// Static Metadata for Search Engines and Social Media
 export const metadata: Metadata = {
   title: "TrendifyTube",
   description: "Watch trending videos from around the world",
   generator: "v0.dev",
+  metadataBase: new URL("https://trendifyhub.vercel.app"),
   openGraph: {
     title: "TrendifyTube",
     description: "Watch trending videos from around the world",
@@ -30,22 +33,33 @@ export const metadata: Metadata = {
       "https://i.ibb.co/wZzWzBpJ/Colorful-Minimalist-Social-Community-Logo-removebg-preview.png",
     ],
   },
-  other: {
-    "google-site-verification": "G68a3mRZtGTDKcAOHvC2YFHpGavV38TRiQCNQgH2rE0",
-    "fb:app_id": "612329958564700"
-  }
+  verification: {
+    google: "G68a3mRZtGTDKcAOHvC2YFHpGavV38TRiQCNQgH2rE0",
+    other: {
+      "fb:app_id": "612329958564700",
+    },
+  },
+};
+
+// Dynamic Canonical Tag Component
+function CanonicalTag() {
+  const pathname = usePathname();
+  const canonical = `https://trendifyhub.vercel.app${pathname === "/" ? "" : pathname}`;
+  return <link rel="canonical" href={canonical} />;
 }
 
+// Root Layout
 export default function RootLayout({
   children,
 }: Readonly<{
-  children: React.ReactNode
+  children: React.ReactNode;
 }>) {
   return (
     <html lang="en">
-      <body>
-        {children}
-      </body>
+      <head>
+        <CanonicalTag />
+      </head>
+      <body>{children}</body>
     </html>
-  )
+  );
 }
