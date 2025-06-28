@@ -1,4 +1,4 @@
-import type React from "react"
+import type React from "react" 
 import type { Metadata } from "next"
 import "./globals.css"
 
@@ -30,6 +30,10 @@ export const metadata: Metadata = {
       "https://i.ibb.co/wZzWzBpJ/Colorful-Minimalist-Social-Community-Logo-removebg-preview.png",
     ],
   },
+  other: {
+    "google-site-verification": "G68a3mRZtGTDKcAOHvC2YFHpGavV38TRiQCNQgH2rE0",
+    "fb:app_id": "612329958564700"
+  }
 }
 
 export default function RootLayout({
