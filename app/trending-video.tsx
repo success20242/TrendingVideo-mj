@@ -39,6 +39,8 @@ const availableTags = [
   "technology",
 ];
 
+const VIDEOS_PER_PAGE = 6;
+
 export default function TrendingVideo() {
   const [videos, setVideos] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -52,6 +54,9 @@ export default function TrendingVideo() {
 
   // Inline expansion state for video
   const [expandedVideoId, setExpandedVideoId] = useState(null);
+
+  // Pagination state
+  const [page, setPage] = useState(1);
 
   // Background music carousel states
   const [bgTrackIndex, setBgTrackIndex] = useState(0);
@@ -126,6 +131,16 @@ export default function TrendingVideo() {
     selectedTag === "all"
       ? videos
       : videos.filter((video) => video.tags.includes(selectedTag));
+
+  // Pagination for filtered videos
+  const totalPages = Math.ceil(filteredVideos.length / VIDEOS_PER_PAGE);
+  const paginatedVideos = filteredVideos.slice((page - 1) * VIDEOS_PER_PAGE, page * VIDEOS_PER_PAGE);
+
+  // Auto-reset to first page on tag/country/language filter change
+  useEffect(() => {
+    setPage(1);
+    setExpandedVideoId(null);
+  }, [selectedTag, selectedCountry, selectedLanguage]);
 
   // Background music controls
   const playNextTrack = () => {
@@ -209,6 +224,33 @@ export default function TrendingVideo() {
   const siteUrl = "https://yourdomain.com/"; // Replace with your production URL
   const siteImage = "https://i.ibb.co/wZzWzBpJ/Colorful-Minimalist-Social-Community-Logo-removebg-preview.png";
   const siteLocale = "en_US";
+
+  // Responsive/modal video studio state
+  const [showModal, setShowModal] = useState(false);
+  const [modalVideo, setModalVideo] = useState(null);
+
+  // Open video modal studio
+  const openModal = (video) => {
+    setModalVideo(video);
+    setShowModal(true);
+    document.body.style.overflow = "hidden";
+  };
+  // Close video modal studio
+  const closeModal = () => {
+    setShowModal(false);
+    setModalVideo(null);
+    document.body.style.overflow = "";
+  };
+
+  // Handle escape key for modal close
+  useEffect(() => {
+    if (!showModal) return;
+    const onKeyDown = (e) => {
+      if (e.key === "Escape") closeModal();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [showModal]);
 
   return (
     <>
@@ -328,6 +370,55 @@ export default function TrendingVideo() {
             transition: opacity 0.18s;
           }
           .collapse-btn:hover {
+            opacity: 1;
+            background: rgba(0,0,0,0.99);
+          }
+          /* Modal Styles */
+          .modal-overlay {
+            position: fixed;
+            z-index: 1000;
+            inset: 0;
+            background: rgba(0,0,0,0.87);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          }
+          .modal-content {
+            position: relative;
+            width: 95vw;
+            max-width: 540px;
+            background: #18181b;
+            border-radius: 1.3em;
+            padding: 1.1em 0.7em 1.5em 0.7em;
+            box-shadow: 0 8px 44px 0 rgba(0,0,0,0.45);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            max-height: 90vh;
+          }
+          @media (max-width: 600px) {
+            .modal-content {
+              width: 99vw;
+              max-width: 99vw;
+              padding: 0.2em 0.1em 0.7em 0.1em;
+            }
+          }
+          .modal-close-btn {
+            position: absolute;
+            top: 0.75em;
+            right: 1.11em;
+            background: rgba(0,0,0,0.65);
+            color: #fff;
+            border: none;
+            border-radius: 0.7em;
+            padding: 0.3em 1.3em;
+            font-size: 1.3em;
+            cursor: pointer;
+            z-index: 2;
+            opacity: 0.94;
+            transition: opacity 0.18s;
+          }
+          .modal-close-btn:hover {
             opacity: 1;
             background: rgba(0,0,0,0.99);
           }
@@ -453,120 +544,158 @@ export default function TrendingVideo() {
             No videos found for selected tag. Try changing your filters.
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {filteredVideos.map((video, idx) => {
-              const locked = !isPremium && idx >= 3;
-              const isHovered = hoveredVideoId === video.id;
+          <>
+            {/* Video grid: only show 6 per page */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {paginatedVideos.map((video, idx) => {
+                const locked = !isPremium && ((page-1)*VIDEOS_PER_PAGE + idx) >= 3;
+                const isHovered = hoveredVideoId === video.id;
+                const isExpanded = expandedVideoId === video.id;
 
-              // Fallback GIF/thumbnail URL fallback for hover preview:
-              // Using YouTube medium thumbnail jpg here as fallback image,
-              // replace with actual GIF URLs if you host them.
-              const gifFallbackUrl = video.snippet.thumbnails?.medium?.url || "";
+                // Fallback GIF/thumbnail URL fallback for hover preview:
+                const gifFallbackUrl = video.snippet.thumbnails?.medium?.url || "";
 
-              // Inline Expansion: replaces modal feature
-              const isExpanded = expandedVideoId === video.id;
-
-              return (
-                <div
-                  key={video.id}
-                  className={`relative bg-white dark:bg-gray-800 rounded-xl shadow-xl overflow-hidden group transition-all duration-300 ${isExpanded ? "ring-4 ring-indigo-300 dark:ring-indigo-600" : ""}`}
-                  onMouseEnter={() => setHoveredVideoId(video.id)}
-                  onMouseLeave={() => setHoveredVideoId(null)}
-                  aria-label={video.snippet.title}
-                >
-                  {locked ? (
-                    <div className="flex items-center justify-center h-60 bg-gray-200 dark:bg-gray-900 text-gray-600 dark:text-gray-300 font-bold rounded-xl">
-                      🔒 Subscribe to unlock
-                    </div>
-                  ) : (
-                    <div
-                      className={`video-iframe-wrapper${isExpanded ? " expanded" : ""}`}
-                      tabIndex={0}
-                      style={{ cursor: isExpanded ? "default" : "pointer" }}
-                      title={isExpanded ? "Collapse video" : "Click to expand video"}
-                      aria-label={isExpanded ? "Collapse video" : "Click to expand video"}
-                    >
-                      {canAutoplay ? (
-                        <iframe
-                          className="video-iframe group-hover:scale-[1.02] transition-transform duration-200"
-                          src={
-                            isExpanded
-                              // Controls and unmuted enabled for expanded player (confirmed)
-                              ? `https://www.youtube.com/embed/${video.id}?autoplay=1&controls=1&mute=0&rel=0&modestbranding=1`
-                              : (isHovered
+                return (
+                  <div
+                    key={video.id}
+                    className={`relative bg-white dark:bg-gray-800 rounded-xl shadow-xl overflow-hidden group transition-all duration-300`}
+                    onMouseEnter={() => setHoveredVideoId(video.id)}
+                    onMouseLeave={() => setHoveredVideoId(null)}
+                    aria-label={video.snippet.title}
+                  >
+                    {locked ? (
+                      <div className="flex items-center justify-center h-60 bg-gray-200 dark:bg-gray-900 text-gray-600 dark:text-gray-300 font-bold rounded-xl">
+                        🔒 Subscribe to unlock
+                      </div>
+                    ) : (
+                      <div
+                        className={`video-iframe-wrapper`}
+                        tabIndex={0}
+                        style={{ cursor: "pointer" }}
+                        title="Tap to expand"
+                        aria-label="Tap to expand"
+                        onClick={() => openModal(video)}
+                      >
+                        {canAutoplay ? (
+                          <iframe
+                            className="video-iframe group-hover:scale-[1.02] transition-transform duration-200"
+                            src={
+                              isHovered
                                 ? `https://www.youtube.com/embed/${video.id}?autoplay=1&mute=1&loop=1&playlist=${video.id}&controls=0&modestbranding=1&rel=0`
                                 : `https://www.youtube.com/embed/${video.id}?controls=1&modestbranding=1&rel=0`
-                              )
-                          }
-                          title={video.snippet.title}
-                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                          allowFullScreen
-                          frameBorder="0"
-                          tabIndex={-1}
-                          aria-hidden="true"
-                        />
-                      ) : (
-                        // Fallback to static image if autoplay is blocked
-                        <img
-                          src={gifFallbackUrl}
-                          alt={`Preview thumbnail for ${video.snippet.title}`}
-                          className="fallback-gif"
-                          loading="lazy"
-                        />
-                      )}
-                      {/* Inline Expansion Controls */}
-                      {!isExpanded ? (
+                            }
+                            title={video.snippet.title}
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowFullScreen
+                            frameBorder="0"
+                            tabIndex={-1}
+                            aria-hidden="true"
+                          />
+                        ) : (
+                          // Fallback to static image if autoplay is blocked
+                          <img
+                            src={gifFallbackUrl}
+                            alt={`Preview thumbnail for ${video.snippet.title}`}
+                            className="fallback-gif"
+                            loading="lazy"
+                          />
+                        )}
+                        {/* Show overlay play/expand icon */}
                         <button
                           className="expand-btn"
-                          onClick={() => setExpandedVideoId(video.id)}
                           aria-label="Expand video"
                         >
                           📺 Expand to Watch
                         </button>
-                      ) : (
-                        <button
-                          className="collapse-btn"
-                          onClick={() => setExpandedVideoId(null)}
-                          aria-label="Collapse video"
-                        >
-                          ✖ Collapse
-                        </button>
-                      )}
-                    </div>
-                  )}
-
-                  <div className="p-4">
-                    <h2 className="text-lg font-bold text-gray-800 dark:text-white flex items-center">
-                      {video.snippet.title}
-                      <SoundWave />
-                    </h2>
-                    {!locked && (
-                      <p className="text-sm text-gray-500 dark:text-gray-300">
-                        {video.snippet.channelTitle}
-                      </p>
+                      </div>
                     )}
-                    <a
-                      href={`https://www.amazon.com/s?k=${encodeURIComponent(
-                        video.snippet.title
-                      )}&tag=qualitygood0d-21`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="block mt-2 text-sm text-blue-600 hover:underline"
-                    >
-                      🛍️ Shop related products on Amazon
-                    </a>
-                    <a
-                      href="https://www.facebook.com/share/14E1rQ9My1r/"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="block text-sm text-green-600 hover:underline"
-                    >
-                      👞 Explore stylish shoes from 3Kings Boutique on Facebook
-                    </a>
+
+                    <div className="p-4">
+                      <h2 className="text-lg font-bold text-gray-800 dark:text-white flex items-center">
+                        {video.snippet.title}
+                        <SoundWave />
+                      </h2>
+                      {!locked && (
+                        <p className="text-sm text-gray-500 dark:text-gray-300">
+                          {video.snippet.channelTitle}
+                        </p>
+                      )}
+                      <a
+                        href={`https://www.amazon.com/s?k=${encodeURIComponent(
+                          video.snippet.title
+                        )}&tag=qualitygood0d-21`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block mt-2 text-sm text-blue-600 hover:underline"
+                      >
+                        🛍️ Shop related products on Amazon
+                      </a>
+                      <a
+                        href="https://www.facebook.com/share/14E1rQ9My1r/"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block text-sm text-green-600 hover:underline"
+                      >
+                        👞 Explore stylish shoes from 3Kings Boutique on Facebook
+                      </a>
+                    </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
+            {/* Pagination Controls */}
+            <div className="flex justify-center gap-4 mt-8 items-center">
+              <button
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page === 1}
+                className="px-4 py-2 bg-indigo-200 text-indigo-800 font-semibold rounded disabled:opacity-40"
+              >
+                Previous
+              </button>
+              <span className="text-gray-700 dark:text-gray-200">
+                Page {page} of {totalPages || 1}
+              </span>
+              <button
+                onClick={() => setPage((p) => (p < totalPages ? p + 1 : p))}
+                disabled={page === totalPages}
+                className="px-4 py-2 bg-indigo-200 text-indigo-800 font-semibold rounded disabled:opacity-40"
+              >
+                Next
+              </button>
+            </div>
+          </>
+        )}
+
+        {/* Video Modal Studio */}
+        {showModal && modalVideo && (
+          <div
+            className="modal-overlay"
+            onClick={closeModal}
+            style={{ zIndex: 1000 }}
+          >
+            <div
+              className="modal-content"
+              onClick={(e) => e.stopPropagation()}
+              role="dialog"
+              aria-modal="true"
+            >
+              <button onClick={closeModal} className="modal-close-btn" aria-label="Close modal">
+                ✖
+              </button>
+              <iframe
+                className="w-full rounded-lg"
+                style={{ height: "40vw", maxHeight: "60vh", minHeight: "240px" }}
+                src={`https://www.youtube.com/embed/${modalVideo.id}?autoplay=1&controls=1&mute=0&rel=0&modestbranding=1`}
+                title={modalVideo.snippet.title}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                frameBorder="0"
+              />
+              <div className="mt-4 w-full text-center">
+                <h2 className="text-white text-lg font-bold">{modalVideo.snippet.title}</h2>
+                <p className="text-gray-300">{modalVideo.snippet.channelTitle}</p>
+              </div>
+            </div>
           </div>
         )}
 
