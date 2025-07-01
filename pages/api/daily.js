@@ -2,13 +2,12 @@ import fs from 'fs/promises';
 import path from 'path';
 
 const axios = await import('axios').then(m => m.default);
-const cheerio = await import('cheerio').then(m => m.default);
+const cheerio = await import('cheerio'); // ✅ FIXED HERE
 const fetch = (await import('node-fetch')).default;
 const { Telegraf } = await import('telegraf');
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const CHAT_ID = process.env.TELEGRAM_CHAT_ID;
-// Removed OPENAI_API_KEY as we're using Groq API now
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
 const GHOST_ADMIN_API = process.env.GHOST_ADMIN_API;
 const GHOST_ADMIN_KEY = process.env.GHOST_ADMIN_KEY;
@@ -56,7 +55,7 @@ async function getAmazonImage(keyword) {
     const { data } = await axios.get(url, {
       headers: { 'User-Agent': 'Mozilla/5.0' }
     });
-    const $ = cheerio.load(data);
+    const $ = cheerio.load(data); // ✅ STILL WORKS
     return $('img.s-image').first().attr('src') || null;
   } catch (err) {
     console.error('❌ Amazon image error:', err.message);
@@ -67,7 +66,7 @@ async function getAmazonImage(keyword) {
 async function getProductPrices(keyword) {
   const ebayUrl = `https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(keyword)}`;
   const res = await axios.get(ebayUrl);
-  const $ = cheerio.load(res.data);
+  const $ = cheerio.load(res.data); // ✅ STILL WORKS
   const items = [];
   $('.s-item').slice(0, 3).each((i, el) => {
     const title = $(el).find('.s-item__title').text();
