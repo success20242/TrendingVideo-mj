@@ -149,8 +149,10 @@ export default async function handler(req, res) {
     return result.posts?.[0]?.url;
   }
 
+  // Refactored postToBlogger with automatic token refresh
   async function postToBlogger(title, content) {
     try {
+      // Step 1: Refresh access token using refresh token
       const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -162,14 +164,22 @@ export default async function handler(req, res) {
         })
       });
       const tokenData = await tokenRes.json();
+      if (!tokenData.access_token) {
+        throw new Error('Failed to refresh access token');
+      }
       const accessToken = tokenData.access_token;
 
+      // Step 2: Get blog ID by blog URL
       const blogRes = await fetch(`https://www.googleapis.com/blogger/v3/blogs/byurl?url=${BLOG_URL}`, {
         headers: { Authorization: `Bearer ${accessToken}` }
       });
       const blogData = await blogRes.json();
+      if (!blogData.id) {
+        throw new Error('Failed to get blog ID');
+      }
       const blogId = blogData.id;
 
+      // Step 3: Post new blog post
       const postRes = await fetch(`https://www.googleapis.com/blogger/v3/blogs/${blogId}/posts/`, {
         method: 'POST',
         headers: {
