@@ -98,6 +98,12 @@ async function generateBlogPost(niche, keywords) {
     })
   });
   const data = await response.json();
+
+  if (!data.choices || !data.choices[0]?.message?.content) {
+    console.error('❌ OpenAI response error:', data);
+    throw new Error('OpenAI API did not return expected content.');
+  }
+
   return data.choices[0].message.content;
 }
 
@@ -164,7 +170,6 @@ async function postToGhost(title, content, niche, priceHtml, image) {
 
 async function postToBlogger(title, content) {
   try {
-    // Refresh Access Token
     const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -180,7 +185,6 @@ async function postToBlogger(title, content) {
 
     const accessToken = tokenData.access_token;
 
-    // Get Blog ID
     const blogRes = await fetch(`https://www.googleapis.com/blogger/v3/blogs/byurl?url=${BLOG_URL}`, {
       headers: { Authorization: `Bearer ${accessToken}` }
     });
@@ -188,7 +192,6 @@ async function postToBlogger(title, content) {
     const blogId = blogData.id;
     if (!blogId) throw new Error('Could not fetch blog ID from Blogger API');
 
-    // Post blog content
     const postRes = await fetch(`https://www.googleapis.com/blogger/v3/blogs/${blogId}/posts/`, {
       method: 'POST',
       headers: {
@@ -248,7 +251,6 @@ export async function generateAndPublishPost(niche, keyword) {
     const image = await getAmazonImage(keyword) || `https://source.unsplash.com/1200x630/?${encodeURIComponent(keyword)}`;
     const postUrl = await postToGhost(blogTitle, content, niche, priceHtml, image);
 
-    // Save post locally & push to Telegram, Substack, Blogger etc
     await savePostLocally(blogTitle, content, niche, tagsMap[niche], ['Amazon', 'eBay', 'YouTube']);
     await postToTelegram(`🧠 *${blogTitle}* is live!\nRead: ${postUrl}`);
     await pushToSubstack(blogTitle, content);
@@ -259,7 +261,7 @@ export async function generateAndPublishPost(niche, keyword) {
 
     await postToBlogger(blogTitle, content);
 
-    return postUrl; // Return the published post URL for use by caller
+    return postUrl;
   } catch (err) {
     console.error('❌ Automation error:', err.message);
     return null;
