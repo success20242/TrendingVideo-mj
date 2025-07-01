@@ -100,7 +100,7 @@ async function generateBlogPost(niche, keywords) {
   const data = await response.json();
 
   if (!data.choices || !data.choices[0]?.message?.content) {
-    console.error('❌ OpenAI response error:', data);
+    console.error('❌ OpenAI response error:', JSON.stringify(data, null, 2));
     throw new Error('OpenAI API did not return expected content.');
   }
 
@@ -111,7 +111,12 @@ async function fetchYouTubeTopVideos(keyword) {
   const RSS_URL = `https://www.youtube.com/feeds/videos.xml?search_query=${encodeURIComponent(keyword)}`;
   const response = await fetch(RSS_URL);
   const xml = await response.text();
-  const titles = Array.from(xml.matchAll(/<title>(.*?)<\/title>/g)).slice(1, 4).map(t => t[1]);
+  const matches = Array.from(xml.matchAll(/<title>(.*?)<\/title>/g));
+  if (matches.length < 2) {
+    console.warn('⚠️ No YouTube titles found in RSS feed');
+    return [];
+  }
+  const titles = matches.slice(1, 4).map(t => t[1]);
   return titles;
 }
 
@@ -161,7 +166,11 @@ async function postToGhost(title, content, niche, priceHtml, image) {
       })
     });
     const result = await res.json();
-    return result.posts?.[0]?.url;
+    if (!result.posts || !result.posts[0]?.url) {
+      console.error('❌ Ghost API post error: unexpected response:', JSON.stringify(result, null, 2));
+      return null;
+    }
+    return result.posts[0].url;
   } catch (err) {
     console.error('❌ Ghost post error:', err.message);
     return null;
