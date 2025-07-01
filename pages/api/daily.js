@@ -234,8 +234,8 @@ async function savePostLocally(title, content, niche, tags, sources) {
 title: "${title}"
 date: "${now.toISOString()}"
 niche: "${niche}"
-tags: [${tags.map(t => `"${t}"`).join(', ')}]
-sources: [${sources.map(s => `"${s}"`).join(', ')}]
+tags: [${tags.map(t => \`"\${t}"\`).join(', ')}]
+sources: [${sources.map(s => \`"\${s}"\`).join(', ')}]
 ---
 
 `;
@@ -244,7 +244,7 @@ sources: [${sources.map(s => `"${s}"`).join(', ')}]
 
     await fs.writeFile(path.join(dir, `${slug}.md`), fullContent, 'utf8');
 
-    console.log(`✅ Saved post locally at content/posts/${yearMonth}/${slug}.md`);
+    console.log(\`✅ Saved post locally at content/posts/\${yearMonth}/\${slug}.md\`);
   } catch (err) {
     console.error('❌ Failed to save post locally:', err);
   }
