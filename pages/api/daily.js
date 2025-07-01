@@ -234,8 +234,8 @@ async function savePostLocally(title, content, niche, tags, sources) {
 title: "${title}"
 date: "${now.toISOString()}"
 niche: "${niche}"
-tags: [${tags.map(t => \`"\${t}"\`).join(', ')}]
-sources: [${sources.map(s => \`"\${s}"\`).join(', ')}]
+tags: [${tags.map(t => `"${t}"`).join(', ')}]
+sources: [${sources.map(s => `"${s}"`).join(', ')}]
 ---
 
 `;
@@ -244,7 +244,7 @@ sources: [${sources.map(s => \`"\${s}"\`).join(', ')}]
 
     await fs.writeFile(path.join(dir, `${slug}.md`), fullContent, 'utf8');
 
-    console.log(\`✅ Saved post locally at content/posts/\${yearMonth}/\${slug}.md\`);
+    console.log(`✅ Saved post locally at content/posts/${yearMonth}/${slug}.md`);
   } catch (err) {
     console.error('❌ Failed to save post locally:', err);
   }
@@ -254,25 +254,54 @@ export async function generateAndPublishPost(niche, keyword) {
   const blogTitle = `Top 5 ${keyword} in 2025`;
 
   try {
+    console.log(`[START] Generating blog post for niche=${niche}, keyword=${keyword}`);
+
     const content = await generateBlogPost(niche, keyword);
+    console.log('[OK] Blog content generated');
+
     const priceItems = await getProductPrices(keyword);
+    console.log('[OK] Product prices fetched:', priceItems.length);
+
     const priceHtml = generatePriceHTML(priceItems);
-    const image = await getAmazonImage(keyword) || `https://source.unsplash.com/1200x630/?${encodeURIComponent(keyword)}`;
+
+    const image = await getAmazonImage(keyword);
+    console.log('[OK] Amazon image fetched:', image);
+
     const postUrl = await postToGhost(blogTitle, content, niche, priceHtml, image);
+    if (!postUrl) throw new Error('Failed to get post URL from Ghost');
+
+    console.log('[OK] Post published to Ghost:', postUrl);
 
     await savePostLocally(blogTitle, content, niche, tagsMap[niche], ['Amazon', 'eBay', 'YouTube']);
+    console.log('[OK] Post saved locally');
+
     await postToTelegram(`🧠 *${blogTitle}* is live!\nRead: ${postUrl}`);
+    console.log('[OK] Telegram notification sent');
+
     await pushToSubstack(blogTitle, content);
+    console.log('[OK] Pushed to Substack');
 
     const videos = await fetchYouTubeTopVideos(keyword);
-    await postToTelegram(`🎥 Trending Videos:\n- ${videos.join('\n- ')}`);
-    await sendPoll('Which product should we review next?', videos);
+    console.log('[OK] Fetched YouTube videos:', videos);
+
+    if (videos.length > 0) {
+      await postToTelegram(`🎥 Trending Videos:\n- ${videos.join('\n- ')}`);
+      console.log('[OK] Trending videos posted to Telegram');
+
+      await sendPoll('Which product should we review next?', videos);
+      console.log('[OK] Telegram poll sent');
+    } else {
+      console.log('[INFO] No videos found for poll');
+    }
 
     await postToBlogger(blogTitle, content);
+    console.log('[OK] Posted to Blogger');
 
+    console.log('[SUCCESS] Automation completed');
     return postUrl;
+
   } catch (err) {
-    console.error('❌ Automation error:', err.message);
+    console.error('❌ Automation error:', err);
     return null;
   }
 }
