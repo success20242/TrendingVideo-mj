@@ -85,6 +85,7 @@ function generatePriceHTML(items) {
 
 async function generateBlogPost(niche, keywords) {
   const prompt = `Write a professional, high-standard blog post titled "Top 5 ${keywords} in 2025" with affiliate-style product highlights, intro, bullet points, and summary. Include an engaging tone for a global audience and cite original sources where applicable.`;
+
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: {
@@ -92,11 +93,12 @@ async function generateBlogPost(niche, keywords) {
       'Content-Type': 'application/json'
     },
     body: JSON.stringify({
-      model: 'gpt-4',
+      model: 'gpt-4o', // ✅ updated here
       messages: [{ role: 'user', content: prompt }],
       temperature: 0.7
     })
   });
+
   const data = await response.json();
 
   if (!data.choices || !data.choices[0]?.message?.content) {
