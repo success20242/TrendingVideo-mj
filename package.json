@@ -41,6 +41,7 @@
     "@radix-ui/react-tooltip": "latest",
     "autoprefixer": "^10.4.20",
     "axios": "latest",
+    "cheerio": "latest",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "latest",
@@ -51,7 +52,11 @@
     "next": "15.2.4",
     "next-sitemap": "^4.2.3",
     "next-themes": "latest",
+<<<<<<< HEAD
     "node-fetch": "^2.7.0",
+=======
+    "node-fetch": "latest",
+>>>>>>> f29a4c8d2604ecdba7397920b1b779d1b7c4a70c
     "react": "^19",
     "react-day-picker": "latest",
     "react-dom": "^19",
@@ -61,6 +66,7 @@
     "sonner": "latest",
     "tailwind-merge": "^2.5.5",
     "tailwindcss-animate": "^1.0.7",
+    "telegraf": "latest",
     "vaul": "latest",
     "zod": "^3.24.1"
   },

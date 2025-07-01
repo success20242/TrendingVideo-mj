@@ -3,7 +3,11 @@ const fetch = require('node-fetch');
 const client_id = '235216507530-fjumhq2un4avnpll6tr1qc3uo48jj4eq.apps.googleusercontent.com';
 const client_secret = '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';
 const redirect_uri = 'https://trendifyhub.vercel.app/auth/google/callback';
+<<<<<<< HEAD
 const code = '4/0AVMBsJjAqP8AH9G2DszQKB8_-9D91taeIwVwtElF7wPYdSVnD5sLlmyEx0TEHxwnDyEGYA'; // paste your real code
+=======
+const code = '4/0AVMBsJjAqP8AH9G2DszQKB8_-9D91taeIwVwtElF7wPYdSVnD5sLlmyEx0TEHxwnDyEGYA'; // your code
+>>>>>>> f29a4c8d2604ecdba7397920b1b779d1b7c4a70c
 
 (async () => {
   const res = await fetch('https://oauth2.googleapis.com/token', {
@@ -20,4 +24,8 @@ const code = '4/0AVMBsJjAqP8AH9G2DszQKB8_-9D91taeIwVwtElF7wPYdSVnD5sLlmyEx0TEHxw
 
   const data = await res.json();
   console.log('✅ Blogger Tokens:\n', data);
+<<<<<<< HEAD
 })();
+=======
+})();
+>>>>>>> f29a4c8d2604ecdba7397920b1b779d1b7c4a70c
