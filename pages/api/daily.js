@@ -1,5 +1,6 @@
 import fs from 'fs/promises';
 import path from 'path';
+import jwt from 'jsonwebtoken'; // ✅ Added for Ghost API JWT auth
 
 const axios = await import('axios').then(m => m.default);
 const cheerio = await import('cheerio'); // ✅ FIXED HERE
@@ -55,7 +56,7 @@ async function getAmazonImage(keyword) {
     const { data } = await axios.get(url, {
       headers: { 'User-Agent': 'Mozilla/5.0' }
     });
-    const $ = cheerio.load(data); // ✅ STILL WORKS
+    const $ = cheerio.load(data);
     return $('img.s-image').first().attr('src') || null;
   } catch (err) {
     console.error('❌ Amazon image error:', err.message);
@@ -66,7 +67,7 @@ async function getAmazonImage(keyword) {
 async function getProductPrices(keyword) {
   const ebayUrl = `https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(keyword)}`;
   const res = await axios.get(ebayUrl);
-  const $ = cheerio.load(res.data); // ✅ STILL WORKS
+  const $ = cheerio.load(res.data);
   const items = [];
   $('.s-item').slice(0, 3).each((i, el) => {
     const title = $(el).find('.s-item__title').text();
@@ -149,24 +150,41 @@ async function pushToSubstack(title, content) {
 async function postToGhost(title, content, niche, priceHtml, image) {
   const slug = slugify(title);
   const fullContent = `${content}\n\n<h3>🔍 Price Comparison</h3>${priceHtml}`;
+
   try {
+    const [id, secret] = GHOST_ADMIN_KEY.split(':');
+    const token = jwt.sign(
+      {
+        exp: Math.floor(Date.now() / 1000) + 5 * 60,
+        aud: '/admin/',
+      },
+      Buffer.from(secret, 'hex'),
+      {
+        keyid: id,
+        algorithm: 'HS256',
+      }
+    );
+
     const res = await fetch(`${GHOST_ADMIN_API}/ghost/api/admin/posts/`, {
       method: 'POST',
       headers: {
-        'Authorization': `Ghost ${GHOST_ADMIN_KEY}`,
-        'Content-Type': 'application/json'
+        'Authorization': `Ghost ${token}`,
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        posts: [{
-          title,
-          slug,
-          html: fullContent,
-          status: 'published',
-          tags: ['TrendifyTube', ...tagsMap[niche]],
-          feature_image: image
-        }]
-      })
+        posts: [
+          {
+            title,
+            slug,
+            html: fullContent,
+            status: 'published',
+            tags: ['TrendifyTube', ...tagsMap[niche]],
+            feature_image: image,
+          },
+        ],
+      }),
     });
+
     const result = await res.json();
     if (!result.posts || !result.posts[0]?.url) {
       console.error('❌ Ghost API post error: unexpected response:', JSON.stringify(result, null, 2));
