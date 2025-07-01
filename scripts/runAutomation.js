@@ -1,4 +1,4 @@
-import { generateAndPublishPost } from '../pages/api/daily.js';
+import { generateAndPublishPost } from '../pages/api/daily';
 
 (async () => {
   const niche = 'tech-top-picks';
