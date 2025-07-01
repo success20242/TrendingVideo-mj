@@ -1,3 +1,6 @@
+import fs from 'fs/promises';
+import path from 'path';
+
 export default async function handler(req, res) {
   console.log("🔁 TrendifyTube cron job started...");
 
@@ -84,7 +87,7 @@ export default async function handler(req, res) {
   }
 
   async function generateBlogPost(niche, keywords) {
-    const prompt = `Write a professional, high-standard blog post titled "Top 5 ${keywords} in 2025" with affiliate-style product highlights, intro, bullet points, and summary. Include an engaging tone for a global audience.`;
+    const prompt = `Write a professional, high-standard blog post titled "Top 5 ${keywords} in 2025" with affiliate-style product highlights, intro, bullet points, and summary. Include an engaging tone for a global audience and cite original sources where applicable.`;
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -110,11 +113,19 @@ export default async function handler(req, res) {
   }
 
   async function postToTelegram(message) {
-    await bot.telegram.sendMessage(CHAT_ID, message, { parse_mode: 'Markdown' });
+    try {
+      await bot.telegram.sendMessage(CHAT_ID, message, { parse_mode: 'Markdown' });
+    } catch (err) {
+      console.error('❌ Telegram send message error:', err.message);
+    }
   }
 
   async function sendPoll(title, options) {
-    await bot.telegram.sendPoll(CHAT_ID, `📊 ${title}`, options.slice(0, 4), { is_anonymous: false });
+    try {
+      await bot.telegram.sendPoll(CHAT_ID, `📊 ${title}`, options.slice(0, 4), { is_anonymous: false });
+    } catch (err) {
+      console.error('❌ Telegram send poll error:', err.message);
+    }
   }
 
   async function pushToSubstack(title, content) {
@@ -128,31 +139,35 @@ export default async function handler(req, res) {
   async function postToGhost(title, content, niche, priceHtml, image) {
     const slug = slugify(title);
     const fullContent = `${content}\n\n<h3>🔍 Price Comparison</h3>${priceHtml}`;
-    const res = await fetch(`${GHOST_ADMIN_API}/ghost/api/admin/posts/`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Ghost ${GHOST_ADMIN_KEY}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        posts: [{
-          title,
-          slug,
-          html: fullContent,
-          status: 'published',
-          tags: ['TrendifyTube', ...tagsMap[niche]],
-          feature_image: image
-        }]
-      })
-    });
-    const result = await res.json();
-    return result.posts?.[0]?.url;
+    try {
+      const res = await fetch(`${GHOST_ADMIN_API}/ghost/api/admin/posts/`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Ghost ${GHOST_ADMIN_KEY}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          posts: [{
+            title,
+            slug,
+            html: fullContent,
+            status: 'published',
+            tags: ['TrendifyTube', ...tagsMap[niche]],
+            feature_image: image
+          }]
+        })
+      });
+      const result = await res.json();
+      return result.posts?.[0]?.url;
+    } catch (err) {
+      console.error('❌ Ghost post error:', err.message);
+      return null;
+    }
   }
 
-  // Refactored postToBlogger with automatic token refresh
   async function postToBlogger(title, content) {
     try {
-      // Step 1: Refresh access token using refresh token
+      // Refresh Access Token
       const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -164,22 +179,19 @@ export default async function handler(req, res) {
         })
       });
       const tokenData = await tokenRes.json();
-      if (!tokenData.access_token) {
-        throw new Error('Failed to refresh access token');
-      }
+      if (!tokenData.access_token) throw new Error('No access token received from Google');
+
       const accessToken = tokenData.access_token;
 
-      // Step 2: Get blog ID by blog URL
+      // Get Blog ID
       const blogRes = await fetch(`https://www.googleapis.com/blogger/v3/blogs/byurl?url=${BLOG_URL}`, {
         headers: { Authorization: `Bearer ${accessToken}` }
       });
       const blogData = await blogRes.json();
-      if (!blogData.id) {
-        throw new Error('Failed to get blog ID');
-      }
       const blogId = blogData.id;
+      if (!blogId) throw new Error('Could not fetch blog ID from Blogger API');
 
-      // Step 3: Post new blog post
+      // Post blog content
       const postRes = await fetch(`https://www.googleapis.com/blogger/v3/blogs/${blogId}/posts/`, {
         method: 'POST',
         headers: {
@@ -200,6 +212,35 @@ export default async function handler(req, res) {
     }
   }
 
+  async function savePostLocally(title, content, niche, tags, sources) {
+    try {
+      const now = new Date();
+      const yearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+      const slug = slugify(title);
+      const dir = path.join(process.cwd(), 'content', 'posts', yearMonth);
+
+      await fs.mkdir(dir, { recursive: true });
+
+      const frontmatter = `---
+title: "${title}"
+date: "${now.toISOString()}"
+niche: "${niche}"
+tags: [${tags.map(t => `"${t}"`).join(', ')}]
+sources: [${sources.map(s => `"${s}"`).join(', ')}]
+---
+
+`;
+
+      const fullContent = frontmatter + content;
+
+      await fs.writeFile(path.join(dir, `${slug}.md`), fullContent, 'utf8');
+
+      console.log(`✅ Saved post locally at content/posts/${yearMonth}/${slug}.md`);
+    } catch (err) {
+      console.error('❌ Failed to save post locally:', err);
+    }
+  }
+
   const index = new Date().getDate() % topics.length;
   const { niche, keyword } = topics[index];
   const blogTitle = `Top 5 ${keyword} in 2025`;
@@ -210,6 +251,8 @@ export default async function handler(req, res) {
     const priceHtml = generatePriceHTML(priceItems);
     const image = await getAmazonImage(keyword) || `https://source.unsplash.com/1200x630/?${encodeURIComponent(keyword)}`;
     const postUrl = await postToGhost(blogTitle, content, niche, priceHtml, image);
+
+    await savePostLocally(blogTitle, content, niche, tagsMap[niche], ['Amazon', 'eBay', 'YouTube']);
 
     await postToTelegram(`🧠 *${blogTitle}* is live!\nRead: ${postUrl}`);
     await pushToSubstack(blogTitle, content);
