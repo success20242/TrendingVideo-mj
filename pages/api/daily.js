@@ -8,7 +8,8 @@ const { Telegraf } = await import('telegraf');
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const CHAT_ID = process.env.TELEGRAM_CHAT_ID;
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+// Removed OPENAI_API_KEY as we're using Groq API now
+const GROQ_API_KEY = process.env.GROQ_API_KEY;
 const GHOST_ADMIN_API = process.env.GHOST_ADMIN_API;
 const GHOST_ADMIN_KEY = process.env.GHOST_ADMIN_KEY;
 const SUBSTACK_WEBHOOK = process.env.SUBSTACK_WEBHOOK;
@@ -86,14 +87,14 @@ function generatePriceHTML(items) {
 async function generateBlogPost(niche, keywords) {
   const prompt = `Write a professional, high-standard blog post titled "Top 5 ${keywords} in 2025" with affiliate-style product highlights, intro, bullet points, and summary. Include an engaging tone for a global audience and cite original sources where applicable.`;
 
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+  const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${OPENAI_API_KEY}`,
+      'Authorization': `Bearer ${GROQ_API_KEY}`,
       'Content-Type': 'application/json'
     },
     body: JSON.stringify({
-      model: 'gpt-4o', // ✅ updated here
+      model: 'meta-llama/llama-4-scout-17b-16e-instruct',
       messages: [{ role: 'user', content: prompt }],
       temperature: 0.7
     })
@@ -102,8 +103,8 @@ async function generateBlogPost(niche, keywords) {
   const data = await response.json();
 
   if (!data.choices || !data.choices[0]?.message?.content) {
-    console.error('❌ OpenAI response error:', JSON.stringify(data, null, 2));
-    throw new Error('OpenAI API did not return expected content.');
+    console.error('❌ Groq API response error:', JSON.stringify(data, null, 2));
+    throw new Error('Groq API did not return expected content.');
   }
 
   return data.choices[0].message.content;
