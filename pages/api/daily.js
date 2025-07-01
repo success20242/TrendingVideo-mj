@@ -12,6 +12,10 @@ export default async function handler(req, res) {
   const GHOST_ADMIN_API = process.env.GHOST_ADMIN_API;
   const GHOST_ADMIN_KEY = process.env.GHOST_ADMIN_KEY;
   const SUBSTACK_WEBHOOK = process.env.SUBSTACK_WEBHOOK;
+  const CLIENT_ID = process.env.CLIENT_ID;
+  const CLIENT_SECRET = process.env.CLIENT_SECRET;
+  const REFRESH_TOKEN = process.env.REFRESH_TOKEN;
+  const BLOG_URL = process.env.BLOG_URL;
 
   const bot = new Telegraf(BOT_TOKEN);
 
@@ -145,12 +149,46 @@ export default async function handler(req, res) {
     return result.posts?.[0]?.url;
   }
 
-  // --- Placeholder for Blogger auto-posting (to implement in future) ---
   async function postToBlogger(title, content) {
-    console.log('📌 Blogger posting placeholder — not yet implemented.');
-    // Future implementation: post to Google Blogger API here
+    try {
+      const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          client_id: CLIENT_ID,
+          client_secret: CLIENT_SECRET,
+          refresh_token: REFRESH_TOKEN,
+          grant_type: 'refresh_token'
+        })
+      });
+      const tokenData = await tokenRes.json();
+      const accessToken = tokenData.access_token;
+
+      const blogRes = await fetch(`https://www.googleapis.com/blogger/v3/blogs/byurl?url=${BLOG_URL}`, {
+        headers: { Authorization: `Bearer ${accessToken}` }
+      });
+      const blogData = await blogRes.json();
+      const blogId = blogData.id;
+
+      const postRes = await fetch(`https://www.googleapis.com/blogger/v3/blogs/${blogId}/posts/`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          kind: 'blogger#post',
+          title,
+          content
+        })
+      });
+
+      const result = await postRes.json();
+      console.log('✅ Blogger post published:', result.url);
+    } catch (err) {
+      console.error('❌ Blogger posting failed:', err.message);
+    }
   }
-  // ---------------------------------------------------------------------
 
   const index = new Date().getDate() % topics.length;
   const { niche, keyword } = topics[index];
@@ -170,7 +208,6 @@ export default async function handler(req, res) {
     await postToTelegram(`🎥 Trending Videos:\n- ${videos.join('\n- ')}`);
     await sendPoll('Which product should we review next?', videos);
 
-    // Call Blogger placeholder
     await postToBlogger(blogTitle, content);
 
     res.status(200).send("✅ TrendifyTube automation completed");
