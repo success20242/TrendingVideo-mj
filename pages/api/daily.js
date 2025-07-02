@@ -186,7 +186,14 @@ async function postToGhost(title, content, niche, priceHtml, image) {
       }),
     });
 
+    if (!res.ok) {
+      const text = await res.text(); // Read raw response for debugging
+      console.error(`❌ Ghost API HTTP error: ${res.status}`, text);
+      return null;
+    }
+
     const result = await res.json();
+
     if (!result.posts || !result.posts[0]?.url) {
       console.error('❌ Ghost API post error: unexpected response:', JSON.stringify(result, null, 2));
       return null;
