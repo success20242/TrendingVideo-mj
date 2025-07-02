@@ -1,10 +1,11 @@
-import handler from './pages/api/daily.js'; // ✅ Correct path if file is located here
+// trigger.js
+import handler from './pages/api/daily.js';
 
-const req = {}; // ✅ Mock request object
+const req = {};
 const res = {
   status: (code) => ({
-    send: (msg) => console.log(`Status: ${code}\n${msg}`) // ✅ Output response in console
+    send: (msg) => console.log(`Status: ${code}\n${msg}`)
   })
 };
 
-handler(req, res); // ✅ Triggers your automation
+handler(req, res);
