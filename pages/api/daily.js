@@ -7,11 +7,12 @@ const cheerio = await import('cheerio'); // ✅ FIXED HERE
 const fetch = (await import('node-fetch')).default;
 const { Telegraf } = await import('telegraf');
 
+// ✅ FIXED ENVIRONMENT VARIABLE NAMES TO MATCH .env.local
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
-const GHOST_ADMIN_API = process.env.GHOST_ADMIN_API;
-const GHOST_ADMIN_KEY = process.env.GHOST_ADMIN_KEY;
+const GHOST_ADMIN_API = process.env.GHOST_API_URL;
+const GHOST_ADMIN_KEY = process.env.GHOST_ADMIN_API_KEY;
 const SUBSTACK_WEBHOOK = process.env.SUBSTACK_WEBHOOK;
 const CLIENT_ID = process.env.CLIENT_ID;
 const CLIENT_SECRET = process.env.CLIENT_SECRET;
