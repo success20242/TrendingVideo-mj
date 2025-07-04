@@ -1,6 +1,7 @@
 import fs from 'fs/promises';
 import path from 'path';
 import jwt from 'jsonwebtoken';
+import { marked } from 'marked';
 
 const axios = await import('axios').then(m => m.default);
 const cheerio = await import('cheerio');
@@ -193,7 +194,7 @@ async function postToGhost(title, content, niche, priceHtml, image) {
     });
 
     if (!res.ok) {
-      const text = await res.text(); // Read raw response for debugging
+      const text = await res.text();
       console.error(`❌ Ghost API HTTP error: ${res.status}`, text);
       return null;
     }
@@ -235,6 +236,8 @@ async function postToBlogger(title, content) {
     const blogId = blogData.id;
     if (!blogId) throw new Error('Could not fetch blog ID from Blogger API');
 
+    const htmlContent = marked.parse(injectEthicsNotices(content));
+
     const postRes = await fetch(`https://www.googleapis.com/blogger/v3/blogs/${blogId}/posts/`, {
       method: 'POST',
       headers: {
@@ -244,7 +247,7 @@ async function postToBlogger(title, content) {
       body: JSON.stringify({
         kind: 'blogger#post',
         title,
-        content
+        content: htmlContent
       })
     });
 
@@ -255,6 +258,7 @@ async function postToBlogger(title, content) {
   }
 }
 
+// The rest remains unchanged (savePostLocally and generateAndPublishPost functions)
 async function savePostLocally(title, content, niche, tags, sources) {
   try {
     const now = new Date();
