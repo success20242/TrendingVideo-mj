@@ -1,13 +1,12 @@
 import fs from 'fs/promises';
 import path from 'path';
-import jwt from 'jsonwebtoken'; // ✅ Added for Ghost API JWT auth
+import jwt from 'jsonwebtoken';
 
 const axios = await import('axios').then(m => m.default);
-const cheerio = await import('cheerio'); // ✅ FIXED HERE
+const cheerio = await import('cheerio');
 const fetch = (await import('node-fetch')).default;
 const { Telegraf } = await import('telegraf');
 
-// ✅ FIXED ENVIRONMENT VARIABLE NAMES TO MATCH .env.local
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
@@ -49,6 +48,13 @@ const tagsMap = {
 
 function slugify(text) {
   return text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+}
+
+function injectEthicsNotices(content) {
+  const disclosure = `\n\n<p><strong>Disclosure:</strong> This post may contain affiliate links. If you use these links to buy something, we may earn a commission.</p>`;
+  const attribution = `\n<p><em>Sources: Amazon, eBay, YouTube, OpenAI/Groq</em></p>`;
+  const aiNotice = `\n<p><em>This article was generated with the assistance of AI tools.</em></p>`;
+  return content + disclosure + attribution + aiNotice;
 }
 
 async function getAmazonImage(keyword) {
