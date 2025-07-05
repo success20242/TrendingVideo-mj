@@ -207,13 +207,14 @@ async function postToGhost(title, markdown, niche, priceHtml, image) {
     }
 
     const result = await res.json();
-    // Defensive: check if the post really contains html
-    if (!result.posts || !result.posts[0] || !result.posts[0].html || result.posts[0].html.trim() === '') {
-      console.error('❌ Ghost post missing HTML content in API response.');
+
+    // Defensive: check if the post really contains a url
+    if (!result.posts || !result.posts[0] || !result.posts[0].url) {
+      console.error('❌ Ghost post missing URL in API response.');
       return null;
     }
 
-    return result.posts[0].url || null;
+    return result.posts[0].url;
 
   } catch (err) {
     console.error('❌ Ghost post error:', err.message);
