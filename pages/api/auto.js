@@ -97,6 +97,31 @@ function generatePriceHTML(items) {
     '</ul></section>';
 }
 
+async function postToTelegram(message) {
+  try {
+    await bot.telegram.sendMessage(CHAT_ID, message, { parse_mode: 'Markdown' });
+  } catch (err) {
+    console.error('❌ Telegram send message error:', err.message);
+  }
+}
+
+async function sendPoll(title, options) {
+  try {
+    await bot.telegram.sendPoll(CHAT_ID, `📊 ${title}`, options.slice(0, 4), { is_anonymous: false });
+  } catch (err) {
+    console.error('❌ Telegram send poll error:', err.message);
+  }
+}
+
+async function pushToSubstack(title, content) {
+  try {
+    await axios.post(SUBSTACK_WEBHOOK, { title, content });
+  } catch (err) {
+    console.error('❌ Substack webhook failed:', err.message);
+  }
+}
+
+// ...rest of the code remains unchanged (postToGhost, postToBlogger, savePostLocally, generateBlogPost, generateAndPublishPost, handler)
 async function generateBlogPost(niche, keywords) {
   const prompt = `Write a professional, high-standard blog post titled "Top 5 ${keywords} in 2025" with affiliate-style product highlights, intro, bullet points, and summary. Include an engaging tone for a global audience and cite original sources where applicable.`;
 
