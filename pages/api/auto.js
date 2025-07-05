@@ -211,18 +211,6 @@ async function postToGhost(title, markdown, niche, priceHtml, image) {
     return null;
   }
 }
- if (!res.ok) {
-      const text = await res.text();
-      console.error(`❌ Ghost API HTTP error: ${res.status}`, text);
-      return null;
-    }
-    const result = await res.json();
-    return result.posts?.[0]?.url || null;
-  } catch (err) {
-    console.error('❌ Ghost post error:', err.message);
-    return null;
-  }
-}
 
 async function postToBlogger(title, markdown) {
   try {
