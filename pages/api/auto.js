@@ -70,6 +70,7 @@ async function getAmazonImage(keyword) {
     const $ = cheerio.load(data);
     const imageUrl = $('img.s-image').first().attr('src');
     if (!imageUrl) return null;
+    // Clean Amazon URL image modifiers (optional)
     return imageUrl.replace(/\._.*_\.jpg/, '.jpg');
   } catch (err) {
     console.error('❌ Amazon image error:', err.message);
@@ -97,6 +98,37 @@ function generatePriceHTML(items) {
     '</ul></section>';
 }
 
+async function generateBlogPost(niche, keywords) {
+  const prompt = `Write a professional, high-standard blog post titled "Top 5 ${keywords} in 2025" with affiliate-style product highlights, intro, bullet points, and summary. Include an engaging tone for a global audience and cite original sources where applicable.`;
+  const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${GROQ_API_KEY}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      model: 'meta-llama/llama-4-scout-17b-16e-instruct',
+      messages: [{ role: 'user', content: prompt }],
+      temperature: 0.7
+    })
+  });
+  const data = await response.json();
+  if (!data.choices || !data.choices[0]?.message?.content) {
+    console.error('❌ Groq API response error:', JSON.stringify(data, null, 2));
+    throw new Error('Groq API did not return expected content.');
+  }
+  return data.choices[0].message.content;
+}
+
+async function fetchYouTubeTopVideos(keyword) {
+  const RSS_URL = `https://www.youtube.com/feeds/videos.xml?search_query=${encodeURIComponent(keyword)}`;
+  const response = await fetch(RSS_URL);
+  const xml = await response.text();
+  const matches = Array.from(xml.matchAll(/<title>(.*?)<\/title>/g));
+  if (matches.length < 2) return [];
+  return matches.slice(1, 4).map(t => t[1]);
+}
+
 async function postToTelegram(message) {
   try {
     await bot.telegram.sendMessage(CHAT_ID, message, { parse_mode: 'Markdown' });
@@ -121,41 +153,17 @@ async function pushToSubstack(title, content) {
   }
 }
 
-// ...rest of the code remains unchanged (postToGhost, postToBlogger, savePostLocally, generateBlogPost, generateAndPublishPost, handler)
-async function generateBlogPost(niche, keywords) {
-  const prompt = `Write a professional, high-standard blog post titled "Top 5 ${keywords} in 2025" with affiliate-style product highlights, intro, bullet points, and summary. Include an engaging tone for a global audience and cite original sources where applicable.`;
-
-  const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${GROQ_API_KEY}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      model: 'meta-llama/llama-4-scout-17b-16e-instruct',
-      messages: [{ role: 'user', content: prompt }],
-      temperature: 0.7
-    })
-  });
-
-  const data = await response.json();
-  if (!data.choices || !data.choices[0]?.message?.content) {
-    console.error('❌ Groq API response error:', JSON.stringify(data, null, 2));
-    throw new Error('Groq API did not return expected content.');
-  }
-
-  return data.choices[0].message.content;
-}
-
 async function postToGhost(title, markdown, niche, priceHtml, image) {
   const slug = slugify(title);
   const htmlContent = `<div class="post-content">${marked.parse(injectEthicsNotices(markdown))}</div>`;
   const fullContent = `${htmlContent}\n\n${priceHtml}`;
-
   try {
     const [id, secret] = GHOST_ADMIN_KEY.split(':');
-    const token = jwt.sign({ exp: Math.floor(Date.now() / 1000) + 5 * 60, aud: '/admin/' }, Buffer.from(secret, 'hex'), { keyid: id, algorithm: 'HS256' });
-
+    const token = jwt.sign(
+      { exp: Math.floor(Date.now() / 1000) + 5 * 60, aud: '/admin/' },
+      Buffer.from(secret, 'hex'),
+      { keyid: id, algorithm: 'HS256' }
+    );
     const res = await fetch(`${GHOST_ADMIN_API}/ghost/api/admin/posts/`, {
       method: 'POST',
       headers: {
@@ -163,16 +171,21 @@ async function postToGhost(title, markdown, niche, priceHtml, image) {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        posts: [{ title, slug, html: fullContent, status: 'published', tags: ['TrendifyTube', ...tagsMap[niche]], feature_image: image }]
+        posts: [{
+          title,
+          slug,
+          html: fullContent,
+          status: 'published',
+          tags: ['TrendifyTube', ...tagsMap[niche]],
+          feature_image: image
+        }]
       })
     });
-
     if (!res.ok) {
       const text = await res.text();
       console.error(`❌ Ghost API HTTP error: ${res.status}`, text);
       return null;
     }
-
     const result = await res.json();
     return result.posts?.[0]?.url || null;
   } catch (err) {
@@ -186,7 +199,12 @@ async function postToBlogger(title, markdown) {
     const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({ client_id: CLIENT_ID, client_secret: CLIENT_SECRET, refresh_token: REFRESH_TOKEN, grant_type: 'refresh_token' })
+      body: new URLSearchParams({
+        client_id: CLIENT_ID,
+        client_secret: CLIENT_SECRET,
+        refresh_token: REFRESH_TOKEN,
+        grant_type: 'refresh_token'
+      })
     });
     const tokenData = await tokenRes.json();
     const accessToken = tokenData.access_token;
@@ -215,8 +233,6 @@ async function postToBlogger(title, markdown) {
   }
 }
 
-// Remaining utility functions like savePostLocally, generateAndPublishPost, etc., stay the same but now operate on raw markdown transformed before publishing.
-// The rest remains unchanged (savePostLocally and generateAndPublishPost functions)
 async function savePostLocally(title, content, niche, tags, sources) {
   try {
     const now = new Date();
