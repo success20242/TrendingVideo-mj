@@ -155,8 +155,22 @@ async function pushToSubstack(title, content) {
 
 async function postToGhost(title, markdown, niche, priceHtml, image) {
   const slug = slugify(title);
-  const htmlContent = `<div class="post-content">${marked.parse(injectEthicsNotices(markdown))}</div>`;
+
+  // 🔍 Debug raw markdown
+  console.log('📄 [DEBUG] Raw Markdown Content:\n', markdown);
+
+  const injectedContent = injectEthicsNotices(markdown);
+  console.log('⚙️ [DEBUG] After Injecting Ethics Notices:\n', injectedContent);
+
+  const htmlBody = marked.parse(injectedContent);
+  console.log('🧾 [DEBUG] HTML Converted by marked:\n', htmlBody);
+
+  const htmlContent = `<div class="post-content">${htmlBody}</div>`;
   const fullContent = `${htmlContent}\n\n${priceHtml}`;
+
+  // Final content preview
+  console.log('✅ [DEBUG] Final HTML sent to Ghost:\n', fullContent);
+
   try {
     const [id, secret] = GHOST_ADMIN_KEY.split(':');
     const token = jwt.sign(
@@ -164,6 +178,7 @@ async function postToGhost(title, markdown, niche, priceHtml, image) {
       Buffer.from(secret, 'hex'),
       { keyid: id, algorithm: 'HS256' }
     );
+
     const res = await fetch(`${GHOST_ADMIN_API}/ghost/api/admin/posts/`, {
       method: 'POST',
       headers: {
@@ -181,7 +196,22 @@ async function postToGhost(title, markdown, niche, priceHtml, image) {
         }]
       })
     });
+
     if (!res.ok) {
+      const errorText = await res.text();
+      console.error(`❌ Ghost API HTTP Error (${res.status}):\n`, errorText);
+      return null;
+    }
+
+    const result = await res.json();
+    return result.posts?.[0]?.url || null;
+
+  } catch (err) {
+    console.error('❌ Ghost post error:', err.message);
+    return null;
+  }
+}
+ if (!res.ok) {
       const text = await res.text();
       console.error(`❌ Ghost API HTTP error: ${res.status}`, text);
       return null;
