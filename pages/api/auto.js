@@ -156,15 +156,17 @@ async function pushToSubstack(title, content) {
 async function postToGhost(title, markdown, niche, priceHtml, image) {
   const slug = slugify(title);
 
-  // 🔍 Debug raw markdown
+  // Debug raw markdown
   console.log('📄 [DEBUG] Raw Markdown Content:\n', markdown);
 
   const injectedContent = injectEthicsNotices(markdown);
   console.log('⚙️ [DEBUG] After Injecting Ethics Notices:\n', injectedContent);
 
+  // Convert markdown to HTML
   const htmlBody = marked.parse(injectedContent);
   console.log('🧾 [DEBUG] HTML Converted by marked:\n', htmlBody);
 
+  // Compose full HTML for Ghost
   const htmlContent = `<div class="post-content">${htmlBody}</div>`;
   const fullContent = `${htmlContent}\n\n${priceHtml}`;
 
@@ -179,6 +181,7 @@ async function postToGhost(title, markdown, niche, priceHtml, image) {
       { keyid: id, algorithm: 'HS256' }
     );
 
+    // Ghost Admin API expects 'html' for HTML content
     const res = await fetch(`${GHOST_ADMIN_API}/ghost/api/admin/posts/`, {
       method: 'POST',
       headers: {
@@ -204,7 +207,13 @@ async function postToGhost(title, markdown, niche, priceHtml, image) {
     }
 
     const result = await res.json();
-    return result.posts?.[0]?.url || null;
+    // Defensive: check if the post really contains html
+    if (!result.posts || !result.posts[0] || !result.posts[0].html || result.posts[0].html.trim() === '') {
+      console.error('❌ Ghost post missing HTML content in API response.');
+      return null;
+    }
+
+    return result.posts[0].url || null;
 
   } catch (err) {
     console.error('❌ Ghost post error:', err.message);
