@@ -64,4 +64,8 @@ Remember, budgeting is a crucial step towards achieving financial freedom. With 
 * Spendee: [www.spendee.com](http://www.spendee.com)
 * Quicken: [www.quicken.com](http://www.quicken.com)
 
+<<<<<<< HEAD
 **Disclaimer:** The information provided in this post is for educational purposes only and should not be considered as financial advice. We encourage you to do your own research and consult with a financial advisor before making any financial decisions. Some of the links provided in this post are affiliate links, which means we may earn a commission if you sign up for a product or service. However, this does not affect our recommendations or the quality of the content.
+=======
+**Disclaimer:** The affiliate links provided in this post are for informational purposes only. We may earn a commission if you sign up for any of the products mentioned. However, this does not affect our recommendations or the quality of of content provided.
+>>>>>>> d2432a34c87d0a4d2806db9fae7c432fdd04a04a

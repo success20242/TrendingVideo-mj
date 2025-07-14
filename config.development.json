@@ -1,0 +1,29 @@
+{
+  "url": "http://localhost:2368/",
+  "server": {
+    "port": 2368,
+    "host": "127.0.0.1"
+  },
+  "database": {
+    "client": "sqlite3",
+    "connection": {
+      "filename": "C:\\Users\\onyek\\TrendingVideo-mj\\TrendingVideo-mj\\content\\data\\ghost-local.db"
+    }
+  },
+  "mail": {
+    "transport": "SMTP",
+    "options": {
+      "service": "Gmail",
+      "auth": {
+        "user": "onyekachiebosi@gmail.com",
+        "pass": "kphc awvp wkxm kuaj"
+      }
+    }
+  },
+  "logging": {
+    "transports": [
+      "file",
+      "stdout"
+    ]
+  }
+}
