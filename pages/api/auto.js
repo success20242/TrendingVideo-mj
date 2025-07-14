@@ -1,3 +1,4 @@
+// Phase 1: Core functions and post generation setup
 import fs from 'fs/promises';
 import path from 'path';
 import jwt from 'jsonwebtoken';
@@ -63,15 +64,13 @@ async function getAmazonImage(keyword) {
   try {
     const { data } = await axios.get(url, {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+        'User-Agent': 'Mozilla/5.0',
         'Accept-Language': 'en-US,en;q=0.9'
       }
     });
     const $ = cheerio.load(data);
     const imageUrl = $('img.s-image').first().attr('src');
-    if (!imageUrl) return null;
-    // Clean Amazon URL image modifiers (optional)
-    return imageUrl.replace(/\._.*_\.jpg/, '.jpg');
+    return imageUrl?.replace(/\._.*_\.jpg/, '.jpg') || null;
   } catch (err) {
     console.error('❌ Amazon image error:', err.message);
     return null;
@@ -113,7 +112,7 @@ async function generateBlogPost(niche, keywords) {
     })
   });
   const data = await response.json();
-  if (!data.choices || !data.choices[0]?.message?.content) {
+  if (!data.choices?.[0]?.message?.content) {
     console.error('❌ Groq API response error:', JSON.stringify(data, null, 2));
     throw new Error('Groq API did not return expected content.');
   }
@@ -128,6 +127,7 @@ async function fetchYouTubeTopVideos(keyword) {
   if (matches.length < 2) return [];
   return matches.slice(1, 4).map(t => t[1]);
 }
+// Phase 2: Publishing and handler logic
 
 async function postToTelegram(message) {
   try {
@@ -155,43 +155,15 @@ async function pushToSubstack(title, content) {
 
 async function postToGhost(title, markdown, niche, priceHtml, image) {
   const slug = slugify(title);
-
-  // Debug raw markdown
-  console.log('📄 [DEBUG] Raw Markdown Content:\n', markdown);
-
   const injectedContent = injectEthicsNotices(markdown);
-  console.log('⚙️ [DEBUG] After Injecting Ethics Notices:\n', injectedContent);
-
-  // Convert markdown to HTML
   const htmlBody = marked.parse(injectedContent);
-  console.log('🧾 [DEBUG] HTML Converted by marked:\n', htmlBody);
-
-  // Compose full HTML for Ghost, wrap all content inside one div
-  const fullContent = `
-    <div class="post-content">
-      ${htmlBody}
-      ${priceHtml}
-    </div>
-  `;
-
-  // Final content preview
-  console.log('✅ [DEBUG] Final HTML sent to Ghost:\n', fullContent);
-
+  const fullContent = `<div class="post-content">${htmlBody}${priceHtml}</div>`;
   try {
     const [id, secret] = GHOST_ADMIN_KEY.split(':');
-    const token = jwt.sign(
-      { exp: Math.floor(Date.now() / 1000) + 5 * 60, aud: '/admin/' },
-      Buffer.from(secret, 'hex'),
-      { keyid: id, algorithm: 'HS256' }
-    );
-
-    // Ghost Admin API expects 'html' for HTML content
+    const token = jwt.sign({ exp: Math.floor(Date.now() / 1000) + 5 * 60, aud: '/admin/' }, Buffer.from(secret, 'hex'), { keyid: id, algorithm: 'HS256' });
     const res = await fetch(`${GHOST_ADMIN_API}/ghost/api/admin/posts/`, {
       method: 'POST',
-      headers: {
-        'Authorization': `Ghost ${token}`,
-        'Content-Type': 'application/json'
-      },
+      headers: { 'Authorization': `Ghost ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
         posts: [{
           title,
@@ -203,22 +175,12 @@ async function postToGhost(title, markdown, niche, priceHtml, image) {
         }]
       })
     });
-
     if (!res.ok) {
-      const errorText = await res.text();
-      console.error(`❌ Ghost API HTTP Error (${res.status}):\n`, errorText);
+      console.error(`❌ Ghost API HTTP Error (${res.status}):`, await res.text());
       return null;
     }
-
     const result = await res.json();
-
-    if (!result.posts || !result.posts[0] || !result.posts[0].url) {
-      console.error('❌ Ghost post missing URL in API response.');
-      return null;
-    }
-
-    return result.posts[0].url;
-
+    return result.posts?.[0]?.url || null;
   } catch (err) {
     console.error('❌ Ghost post error:', err.message);
     return null;
@@ -237,38 +199,19 @@ async function postToBlogger(title, markdown) {
         grant_type: 'refresh_token'
       })
     });
-    const tokenData = await tokenRes.json();
-    const accessToken = tokenData.access_token;
-
+    const accessToken = (await tokenRes.json()).access_token;
     const blogRes = await fetch(`https://www.googleapis.com/blogger/v3/blogs/byurl?url=${BLOG_URL}`, {
       headers: { Authorization: `Bearer ${accessToken}` }
     });
-    const blogData = await blogRes.json();
-    const blogId = blogData.id;
-
+    const blogId = (await blogRes.json()).id;
     const htmlContent = `<div class="post-content">${marked.parse(injectEthicsNotices(markdown))}</div>`;
-
     const postRes = await fetch(`https://www.googleapis.com/blogger/v3/blogs/${blogId}/posts/`, {
       method: 'POST',
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        'Content-Type': 'application/json'
-      },
+      headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ kind: 'blogger#post', title, content: htmlContent })
     });
-
     const result = await postRes.json();
-
-    const postUrl = result.url || result.selfLink || null;
-
-    if (!postUrl) {
-      console.warn('⚠️ Blogger API response missing post URL');
-    } else {
-      console.log('✅ Blogger post published:', postUrl);
-    }
-
-    return postUrl;
-
+    return result.url || result.selfLink || null;
   } catch (err) {
     console.error('❌ Blogger posting failed:', err.message);
     return null;
@@ -281,23 +224,9 @@ async function savePostLocally(title, content, niche, tags, sources) {
     const yearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
     const slug = slugify(title);
     const dir = path.join(process.cwd(), 'content', 'posts', yearMonth);
-
     await fs.mkdir(dir, { recursive: true });
-
-    const frontmatter = `---
-title: "${title}"
-date: "${now.toISOString()}"
-niche: "${niche}"
-tags: [${tags.map(t => `"${t}"`).join(', ')}]
-sources: [${sources.map(s => `"${s}"`).join(', ')}]
----
-
-`;
-
-    const fullContent = frontmatter + content;
-
-    await fs.writeFile(path.join(dir, `${slug}.md`), fullContent, 'utf8');
-
+    const frontmatter = `---\ntitle: "${title}"\ndate: "${now.toISOString()}"\nniche: "${niche}"\ntags: [${tags.map(t => `"${t}"`).join(', ')}]\nsources: [${sources.map(s => `"${s}"`).join(', ')}]\n---\n\n`;
+    await fs.writeFile(path.join(dir, `${slug}.md`), frontmatter + content, 'utf8');
     console.log(`✅ Saved post locally at content/posts/${yearMonth}/${slug}.md`);
   } catch (err) {
     console.error('❌ Failed to save post locally:', err);
@@ -306,58 +235,26 @@ sources: [${sources.map(s => `"${s}"`).join(', ')}]
 
 export async function generateAndPublishPost(niche, keyword) {
   const blogTitle = `Top 5 ${keyword} in 2025`;
-
   try {
-    console.log(`[START] Generating blog post for niche=${niche}, keyword=${keyword}`);
-
     const content = await generateBlogPost(niche, keyword);
-    console.log('[OK] Blog content generated');
-
     const priceItems = await getProductPrices(keyword);
-    console.log('[OK] Product prices fetched:', priceItems.length);
-
     const priceHtml = generatePriceHTML(priceItems);
-
     const image = await getAmazonImage(keyword);
-    console.log('[OK] Amazon image fetched:', image);
-
     const postUrl = await postToGhost(blogTitle, content, niche, priceHtml, image);
     if (!postUrl) throw new Error('Failed to get post URL from Ghost');
-
-    console.log('[OK] Post published to Ghost:', postUrl);
-
     await savePostLocally(blogTitle, content, niche, tagsMap[niche], ['Amazon', 'eBay', 'YouTube']);
-    console.log('[OK] Post saved locally');
-
     await postToTelegram(`🧠 *${blogTitle}* is live!\nRead: ${postUrl}`);
-    console.log('[OK] Telegram notification sent');
-
     await pushToSubstack(blogTitle, content);
-    console.log('[OK] Pushed to Substack');
-
     const videos = await fetchYouTubeTopVideos(keyword);
-    console.log('[OK] Fetched YouTube videos:', videos);
-
     if (videos.length > 0) {
       await postToTelegram(`🎥 Trending Videos:\n- ${videos.join('\n- ')}`);
-      console.log('[OK] Trending videos posted to Telegram');
-
       await sendPoll('Which product should we review next?', videos);
-      console.log('[OK] Telegram poll sent');
-    } else {
-      console.log('[INFO] No videos found for poll');
     }
-
     const bloggerPostUrl = await postToBlogger(blogTitle, content);
     if (bloggerPostUrl) {
       console.log('[OK] Posted to Blogger:', bloggerPostUrl);
-    } else {
-      console.log('[WARN] Blogger post URL undefined');
     }
-
-    console.log('[SUCCESS] Automation completed');
     return postUrl;
-
   } catch (err) {
     console.error('❌ Automation error:', err);
     return null;
@@ -367,9 +264,7 @@ export async function generateAndPublishPost(niche, keyword) {
 export default async function handler(req, res) {
   const index = new Date().getDate() % topics.length;
   const { niche, keyword } = topics[index];
-
   const postUrl = await generateAndPublishPost(niche, keyword);
-
   if (postUrl) {
     res.status(200).send("✅ TrendifyTube automation completed");
   } else {
