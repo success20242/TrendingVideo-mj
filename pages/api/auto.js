@@ -166,9 +166,13 @@ async function postToGhost(title, markdown, niche, priceHtml, image) {
   const htmlBody = marked.parse(injectedContent);
   console.log('🧾 [DEBUG] HTML Converted by marked:\n', htmlBody);
 
-  // Compose full HTML for Ghost
-  const htmlContent = `<div class="post-content">${htmlBody}</div>`;
-  const fullContent = `${htmlContent}\n\n${priceHtml}`;
+  // Compose full HTML for Ghost, wrap all content inside one div
+  const fullContent = `
+    <div class="post-content">
+      ${htmlBody}
+      ${priceHtml}
+    </div>
+  `;
 
   // Final content preview
   console.log('✅ [DEBUG] Final HTML sent to Ghost:\n', fullContent);
@@ -208,7 +212,6 @@ async function postToGhost(title, markdown, niche, priceHtml, image) {
 
     const result = await res.json();
 
-    // Defensive: check if the post really contains a url
     if (!result.posts || !result.posts[0] || !result.posts[0].url) {
       console.error('❌ Ghost post missing URL in API response.');
       return null;
@@ -255,9 +258,20 @@ async function postToBlogger(title, markdown) {
     });
 
     const result = await postRes.json();
-    console.log('✅ Blogger post published:', result.url);
+
+    const postUrl = result.url || result.selfLink || null;
+
+    if (!postUrl) {
+      console.warn('⚠️ Blogger API response missing post URL');
+    } else {
+      console.log('✅ Blogger post published:', postUrl);
+    }
+
+    return postUrl;
+
   } catch (err) {
     console.error('❌ Blogger posting failed:', err.message);
+    return null;
   }
 }
 
@@ -334,8 +348,12 @@ export async function generateAndPublishPost(niche, keyword) {
       console.log('[INFO] No videos found for poll');
     }
 
-    await postToBlogger(blogTitle, content);
-    console.log('[OK] Posted to Blogger');
+    const bloggerPostUrl = await postToBlogger(blogTitle, content);
+    if (bloggerPostUrl) {
+      console.log('[OK] Posted to Blogger:', bloggerPostUrl);
+    } else {
+      console.log('[WARN] Blogger post URL undefined');
+    }
 
     console.log('[SUCCESS] Automation completed');
     return postUrl;
