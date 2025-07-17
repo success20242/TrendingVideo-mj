@@ -55,7 +55,7 @@
     "lucide-react": "^0.454.0",
     "markdown-pdf": "latest",
     "marked": "latest",
-    "next": "^13.4.4",
+    "next": "^15.4.1",
     "next-sitemap": "^4.2.3",
     "next-themes": "latest",
     "node-fetch": "latest",
