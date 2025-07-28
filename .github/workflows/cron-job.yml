@@ -2,8 +2,7 @@ name: Run TrendifyTube Automation
 
 on:
   schedule:
-    # Runs at 5:00 AM UTC daily (adjust as needed)
-    - cron: '0 5 * * *'
+    - cron: '0 5 * * *'  # daily at 5:00 AM UTC
 
 jobs:
   run-automation:
@@ -22,8 +21,7 @@ jobs:
       run: npm install
 
     - name: Run automation script
-      # Adjust if you want to run your Next.js API route or a standalone script
-      run: node ./scripts/auto.js
+      run: node ./scripts/auto-run.js
 
     env:
       TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
