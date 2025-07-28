@@ -4,7 +4,6 @@ dotenv.config();
 import fs from 'fs/promises';
 import path from 'path';
 import axios from 'axios';
-import * as cheerio from 'cheerio';
 import fetch from 'node-fetch';
 import { marked } from 'marked';
 import { Telegraf } from 'telegraf';
@@ -50,7 +49,6 @@ function slugify(text) {
   return text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
 }
 
-// Improved ethics notices and source attribution
 function injectEthicsNotices(content) {
   const disclosure = `\n\n<p><strong>Disclosure:</strong> This post may contain affiliate links. If you use these links to buy something, we may earn a commission.</p>`;
   const attribution = `
@@ -65,47 +63,43 @@ function injectEthicsNotices(content) {
   return content + disclosure + attribution + aiNotice;
 }
 
-async function getAmazonProduct(keyword) {
-  const url = `https://www.amazon.com/s?k=${encodeURIComponent(keyword)}`;
-  try {
-    const { data } = await axios.get(url, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
-        'Accept-Language': 'en-US,en;q=0.9'
-      }
-    });
-    const $ = cheerio.load(data);
+// Generate blog post with Groq API and require real links in the prompt
+async function generateBlogPost(niche, keywords) {
+  const prompt = `
+Write a professional, high-standard blog post titled "Top 5 ${keywords} in 2025" with affiliate-style product highlights, intro, bullet points, and summary.
 
-    const seen = new Set();
-    const products = [];
-    $('div[data-asin]').each((i, el) => {
-      const asin = $(el).attr('data-asin');
-      if (!asin || seen.has(asin)) return;
-      seen.add(asin);
+For each product, include a real official or Amazon/retailer purchase link as a Markdown hyperlink (e.g. [Product Name](https://...)). The link must be directly after the product name in the highlight, e.g.: 
 
-      const productUrl = `https://www.amazon.com/dp/${asin}`;
-      const imageUrl = $(el).find('img.s-image').attr('src');
+"1. [Anker PowerCore Fusion Solar Charger](https://www.anker.com/products/a1625): This charger ..."
 
-      // Example affiliate link logic (replace YOUR-AFFILIATE-ID)
-      const affiliateUrl = `${productUrl}/?tag=YOUR-AFFILIATE-ID`;
+Format all product names this way. Do not use placeholder or fake links. Use the best-guess or most likely official or trusted retailer URL for each product.
 
-      if (productUrl && imageUrl) {
-        products.push({ productUrl: affiliateUrl, imageUrl });
-      }
-    });
-
-    if (products.length === 0) return null;
-
-    return products[0];
-  } catch (err) {
-    console.error('❌ Amazon scraping error:', err.message);
-    return null;
+Include sources and a disclosure at the end.
+  `.trim();
+  const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${GROQ_API_KEY}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      model: 'meta-llama/llama-4-scout-17b-16e-instruct',
+      messages: [{ role: 'user', content: prompt }],
+      temperature: 0.7
+    })
+  });
+  const data = await response.json();
+  if (!data.choices || !data.choices[0]?.message?.content) {
+    throw new Error('Groq API did not return expected content.');
   }
+  let content = data.choices[0].message.content;
+  return content;
 }
 
 async function getProductPrices(keyword) {
   const ebayUrl = `https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(keyword)}`;
   const res = await axios.get(ebayUrl);
+  const cheerio = (await import('cheerio')).default;
   const $ = cheerio.load(res.data);
   const items = [];
   const seen = new Set();
@@ -123,7 +117,6 @@ async function getProductPrices(keyword) {
 }
 
 function generatePriceHTML(items) {
-  // Remove duplicates by title+price
   const seen = new Set();
   const unique = items.filter(i => {
     const key = i.title + i.price;
@@ -134,34 +127,6 @@ function generatePriceHTML(items) {
   return `\n<section><h3>🛍 Price Comparison</h3><ul>` +
     unique.map(i => `<li><a href="${i.link}" target="_blank" rel="noopener sponsored nofollow">${i.title}</a> - <strong>${i.price}</strong></li>`).join('') +
     '</ul></section>';
-}
-
-async function generateBlogPost(niche, keywords) {
-  const prompt = `Write a professional, high-standard blog post titled "Top 5 ${keywords} in 2025" with affiliate-style product highlights, intro, bullet points, and summary. Include an engaging tone for a global audience and cite original sources where applicable.`;
-  const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${GROQ_API_KEY}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      model: 'meta-llama/llama-4-scout-17b-16e-instruct',
-      messages: [{ role: 'user', content: prompt }],
-      temperature: 0.7
-    })
-  });
-  const data = await response.json();
-  if (!data.choices || !data.choices[0]?.message?.content) {
-    console.error('❌ Groq API response error:', JSON.stringify(data, null, 2));
-    throw new Error('Groq API did not return expected content.');
-  }
-  // Remove repetition in summary/conclusion if found
-  let content = data.choices[0].message.content;
-  content = content.replace(/(sustainable future.*[\r\n]+){2,}/gi, '$1');
-  content = content.replace(/(stay charged.*[\r\n]+){2,}/gi, '$1');
-  // Replace placeholder affiliate links with actual example links
-  content = content.replace(/\[affiliate link\]/gi, '[Buy now on Amazon](https://www.amazon.com/dp/YOUR-AFFILIATE-ID){:rel="nofollow sponsored"}');
-  return content;
 }
 
 async function fetchYouTubeTopVideos(keyword) {
@@ -219,13 +184,7 @@ async function postToBlogger(title, markdown, imageUrl, productUrl) {
     const blogId = blogData.id;
 
     const htmlContent = `
-      <a href="${productUrl || '#'}" target="_blank" rel="noopener sponsored nofollow">
-        <img src="${imageUrl}" alt="Hero Image" style="max-width:100%;" />
-      </a>
       <div class="post-content">${marked.parse(injectEthicsNotices(markdown))}</div>
-      <div style="margin-top:1em;">
-        <a href="${productUrl || '#'}" target="_blank" rel="noopener sponsored nofollow" style="display:inline-block;background:#f7b32b;color:#fff;padding:0.7em 1.2em;border-radius:6px;text-decoration:none;font-weight:bold;">🔗 Shop All on Amazon</a>
-      </div>
     `;
 
     const postRes = await fetch(`https://www.googleapis.com/blogger/v3/blogs/${blogId}/posts/`, {
@@ -283,28 +242,18 @@ async function generateAndPublishPost(niche, keyword) {
   try {
     console.log(`[START] Generating blog post for niche=${niche}, keyword=${keyword}`);
 
+    // 1. Generate blog post (links embedded in product names by Groq prompt)
     const content = await generateBlogPost(niche, keyword);
-    console.log('[OK] Blog content generated');
 
     const priceItems = await getProductPrices(keyword);
     console.log('[OK] Product prices fetched:', priceItems.length);
 
     const priceHtml = generatePriceHTML(priceItems);
 
-    const product = await getAmazonProduct(keyword);
-    if (product) {
-      console.log('[OK] Amazon product fetched:', product.productUrl);
-    } else {
-      console.log('[WARN] No Amazon product found');
-    }
-
     await savePostLocally(blogTitle, content, niche, tagsMap[niche], []);
     console.log('[OK] Post saved locally');
 
     let telegramMsg = `🧠 *${blogTitle}* is live!`;
-    if (product) {
-      telegramMsg += `\n\n🔗 Amazon Deal: [View Product](${product.productUrl})`;
-    }
     await postToTelegram(telegramMsg);
     console.log('[OK] Telegram notification sent');
 
@@ -324,7 +273,7 @@ async function generateAndPublishPost(niche, keyword) {
       console.log('[INFO] No videos found for poll');
     }
 
-    await postToBlogger(blogTitle, content + priceHtml, product?.imageUrl || '', product?.productUrl || '');
+    await postToBlogger(blogTitle, content + priceHtml, '', '');
     console.log('[OK] Posted to Blogger');
 
     console.log('[SUCCESS] Automation completed');
