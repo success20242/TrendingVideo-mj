@@ -153,15 +153,74 @@ async function pushToSubstack(title, content) {
   }
 }
 
-// Disabled Ghost publishing functions - BEGIN
-/*
 async function postToGhost(title, markdown, niche, priceHtml, image) {
-  // This function is disabled.
-  // To re-enable, uncomment the implementation.
-  return null;
+  const slug = slugify(title);
+
+  // Debug raw markdown
+  console.log('📄 [DEBUG] Raw Markdown Content:\n', markdown);
+
+  const injectedContent = injectEthicsNotices(markdown);
+  console.log('⚙️ [DEBUG] After Injecting Ethics Notices:\n', injectedContent);
+
+  // Convert markdown to HTML
+  const htmlBody = marked.parse(injectedContent);
+  console.log('🧾 [DEBUG] HTML Converted by marked:\n', htmlBody);
+
+  // Compose full HTML for Ghost
+  const htmlContent = `<div class="post-content">${htmlBody}</div>`;
+  const fullContent = `${htmlContent}\n\n${priceHtml}`;
+
+  // Final content preview
+  console.log('✅ [DEBUG] Final HTML sent to Ghost:\n', fullContent);
+
+  try {
+    const [id, secret] = GHOST_ADMIN_KEY.split(':');
+    const token = jwt.sign(
+      { exp: Math.floor(Date.now() / 1000) + 5 * 60, aud: '/admin/' },
+      Buffer.from(secret, 'hex'),
+      { keyid: id, algorithm: 'HS256' }
+    );
+
+    // Ghost Admin API expects 'html' for HTML content
+    const res = await fetch(`${GHOST_ADMIN_API}/ghost/api/admin/posts/`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Ghost ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        posts: [{
+          title,
+          slug,
+          html: fullContent,
+          status: 'published',
+          tags: ['TrendifyTube', ...tagsMap[niche]],
+          feature_image: image
+        }]
+      })
+    });
+
+    if (!res.ok) {
+      const errorText = await res.text();
+      console.error(`❌ Ghost API HTTP Error (${res.status}):\n`, errorText);
+      return null;
+    }
+
+    const result = await res.json();
+
+    // Defensive: check if the post really contains a url
+    if (!result.posts || !result.posts[0] || !result.posts[0].url) {
+      console.error('❌ Ghost post missing URL in API response.');
+      return null;
+    }
+
+    return result.posts[0].url;
+
+  } catch (err) {
+    console.error('❌ Ghost post error:', err.message);
+    return null;
+  }
 }
-*/
-// Disabled Ghost publishing functions - END
 
 async function postToBlogger(title, markdown) {
   try {
@@ -248,12 +307,10 @@ export async function generateAndPublishPost(niche, keyword) {
     const image = await getAmazonImage(keyword);
     console.log('[OK] Amazon image fetched:', image);
 
-    // Disabled Ghost publishing, skip and fake postUrl
-    // const postUrl = await postToGhost(blogTitle, content, niche, priceHtml, image);
-    // if (!postUrl) throw new Error('Failed to get post URL from Ghost');
-    const postUrl = `https://ghost.example.com/fake/${slugify(blogTitle)}`;
+    const postUrl = await postToGhost(blogTitle, content, niche, priceHtml, image);
+    if (!postUrl) throw new Error('Failed to get post URL from Ghost');
 
-    console.log('[OK] Post (would be) published to Ghost:', postUrl);
+    console.log('[OK] Post published to Ghost:', postUrl);
 
     await savePostLocally(blogTitle, content, niche, tagsMap[niche], ['Amazon', 'eBay', 'YouTube']);
     console.log('[OK] Post saved locally');
@@ -300,4 +357,4 @@ export default async function handler(req, res) {
   } else {
     res.status(500).send("❌ Error running automation");
   }
-                                      }
+}
