@@ -1,8 +1,9 @@
+import fetch from 'node-fetch';  // if you need to polyfill fetch
+
 /** @type {import('next-sitemap').IConfig} */
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://trendifyhub.vercel.app";
 
-// Async function to fetch trending YouTube videos
 async function getTrendingVideos(maxResults = 10) {
   const apiKey = process.env.YOUTUBE_API_KEY;
   if (!apiKey) {
@@ -38,7 +39,7 @@ async function getTrendingVideos(maxResults = 10) {
   }
 }
 
-module.exports = {
+const config = {
   siteUrl: SITE_URL,
   generateRobotsTxt: true,
   sitemapSize: 5000,
@@ -54,7 +55,6 @@ module.exports = {
     ],
   },
 
-  // Add dynamic video URLs with <video:video> metadata
   additionalPaths: async (config) => {
     const videos = await getTrendingVideos();
 
@@ -76,3 +76,5 @@ module.exports = {
     }));
   },
 };
+
+export default config;
