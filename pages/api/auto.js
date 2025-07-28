@@ -1,8 +1,5 @@
-console.log("🚀 Automation started");
-
 import fs from 'fs/promises';
 import path from 'path';
-import jwt from 'jsonwebtoken';
 import { marked } from 'marked';
 
 const axios = await import('axios').then(m => m.default);
@@ -13,8 +10,6 @@ const { Telegraf } = await import('telegraf');
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
-const GHOST_ADMIN_API = process.env.GHOST_API_URL;
-const GHOST_ADMIN_KEY = process.env.GHOST_ADMIN_API_KEY;
 const SUBSTACK_WEBHOOK = process.env.SUBSTACK_WEBHOOK;
 const CLIENT_ID = process.env.CLIENT_ID;
 const CLIENT_SECRET = process.env.CLIENT_SECRET;
@@ -72,7 +67,6 @@ async function getAmazonImage(keyword) {
     const $ = cheerio.load(data);
     const imageUrl = $('img.s-image').first().attr('src');
     if (!imageUrl) return null;
-    // Clean Amazon URL image modifiers (optional)
     return imageUrl.replace(/\._.*_\.jpg/, '.jpg');
   } catch (err) {
     console.error('❌ Amazon image error:', err.message);
@@ -152,75 +146,6 @@ async function pushToSubstack(title, content) {
     await axios.post(SUBSTACK_WEBHOOK, { title, content });
   } catch (err) {
     console.error('❌ Substack webhook failed:', err.message);
-  }
-}
-
-async function postToGhost(title, markdown, niche, priceHtml, image) {
-  const slug = slugify(title);
-
-  // Debug raw markdown
-  console.log('📄 [DEBUG] Raw Markdown Content:\n', markdown);
-
-  const injectedContent = injectEthicsNotices(markdown);
-  console.log('⚙️ [DEBUG] After Injecting Ethics Notices:\n', injectedContent);
-
-  // Convert markdown to HTML
-  const htmlBody = marked.parse(injectedContent);
-  console.log('🧾 [DEBUG] HTML Converted by marked:\n', htmlBody);
-
-  // Compose full HTML for Ghost
-  const htmlContent = `<div class="post-content">${htmlBody}</div>`;
-  const fullContent = `${htmlContent}\n\n${priceHtml}`;
-
-  // Final content preview
-  console.log('✅ [DEBUG] Final HTML sent to Ghost:\n', fullContent);
-
-  try {
-    const [id, secret] = GHOST_ADMIN_KEY.split(':');
-    const token = jwt.sign(
-      { exp: Math.floor(Date.now() / 1000) + 5 * 60, aud: '/admin/' },
-      Buffer.from(secret, 'hex'),
-      { keyid: id, algorithm: 'HS256' }
-    );
-
-    // Ghost Admin API expects 'html' for HTML content
-    const res = await fetch(`${GHOST_ADMIN_API}/ghost/api/admin/posts/`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Ghost ${token}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        posts: [{
-          title,
-          slug,
-          html: fullContent,
-          status: 'published',
-          tags: ['TrendifyTube', ...tagsMap[niche]],
-          feature_image: image
-        }]
-      })
-    });
-
-    if (!res.ok) {
-      const errorText = await res.text();
-      console.error(`❌ Ghost API HTTP Error (${res.status}):\n`, errorText);
-      return null;
-    }
-
-    const result = await res.json();
-
-    // Defensive: check if the post really contains a url
-    if (!result.posts || !result.posts[0] || !result.posts[0].url) {
-      console.error('❌ Ghost post missing URL in API response.');
-      return null;
-    }
-
-    return result.posts[0].url;
-
-  } catch (err) {
-    console.error('❌ Ghost post error:', err.message);
-    return null;
   }
 }
 
@@ -309,15 +234,10 @@ export async function generateAndPublishPost(niche, keyword) {
     const image = await getAmazonImage(keyword);
     console.log('[OK] Amazon image fetched:', image);
 
-    const postUrl = await postToGhost(blogTitle, content, niche, priceHtml, image);
-    if (!postUrl) throw new Error('Failed to get post URL from Ghost');
-
-    console.log('[OK] Post published to Ghost:', postUrl);
-
     await savePostLocally(blogTitle, content, niche, tagsMap[niche], ['Amazon', 'eBay', 'YouTube']);
     console.log('[OK] Post saved locally');
 
-    await postToTelegram(`🧠 *${blogTitle}* is live!\nRead: ${postUrl}`);
+    await postToTelegram(`🧠 *${blogTitle}* is live!`);
     console.log('[OK] Telegram notification sent');
 
     await pushToSubstack(blogTitle, content);
@@ -340,11 +260,11 @@ export async function generateAndPublishPost(niche, keyword) {
     console.log('[OK] Posted to Blogger');
 
     console.log('[SUCCESS] Automation completed');
-    return postUrl;
+    return true;
 
   } catch (err) {
     console.error('❌ Automation error:', err);
-    return null;
+    return false;
   }
 }
 
@@ -352,9 +272,9 @@ export default async function handler(req, res) {
   const index = new Date().getDate() % topics.length;
   const { niche, keyword } = topics[index];
 
-  const postUrl = await generateAndPublishPost(niche, keyword);
+  const success = await generateAndPublishPost(niche, keyword);
 
-  if (postUrl) {
+  if (success) {
     res.status(200).send("✅ TrendifyTube automation completed");
   } else {
     res.status(500).send("❌ Error running automation");
