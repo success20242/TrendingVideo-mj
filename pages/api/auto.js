@@ -149,7 +149,7 @@ async function pushToSubstack(title, content) {
   }
 }
 
-async function postToBlogger(title, markdown) {
+async function postToBlogger(title, markdown, imageUrl) {
   try {
     const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
       method: 'POST',
@@ -170,7 +170,10 @@ async function postToBlogger(title, markdown) {
     const blogData = await blogRes.json();
     const blogId = blogData.id;
 
-    const htmlContent = `<div class="post-content">${marked.parse(injectEthicsNotices(markdown))}</div>`;
+    const htmlContent = `
+      <img src="${imageUrl}" alt="Hero Image" style="max-width:100%;" />
+      <div class="post-content">${marked.parse(injectEthicsNotices(markdown))}</div>
+    `;
 
     const postRes = await fetch(`https://www.googleapis.com/blogger/v3/blogs/${blogId}/posts/`, {
       method: 'POST',
@@ -197,15 +200,7 @@ async function savePostLocally(title, content, niche, tags, sources) {
 
     await fs.mkdir(dir, { recursive: true });
 
-    const frontmatter = `---
-title: "${title}"
-date: "${now.toISOString()}"
-niche: "${niche}"
-tags: [${tags.map(t => `"${t}"`).join(', ')}]
-sources: [${sources.map(s => `"${s}"`).join(', ')}]
----
-
-`;
+    const frontmatter = `--- title: "${title}" date: "${now.toISOString()}" niche: "${niche}" tags: [${tags.map(t => `"${t}"`).join(', ')}] sources: [${sources.map(s => `"${s}"`).join(', ')}] ---\n\n`;
 
     const fullContent = frontmatter + content;
 
@@ -256,12 +251,11 @@ export async function generateAndPublishPost(niche, keyword) {
       console.log('[INFO] No videos found for poll');
     }
 
-    await postToBlogger(blogTitle, content);
+    await postToBlogger(blogTitle, content, image);
     console.log('[OK] Posted to Blogger');
 
     console.log('[SUCCESS] Automation completed');
     return true;
-
   } catch (err) {
     console.error('❌ Automation error:', err);
     return false;
