@@ -1,3 +1,5 @@
+console.log("🚀 Automation started");
+
 import fs from 'fs/promises';
 import path from 'path';
 import jwt from 'jsonwebtoken';
@@ -358,3 +360,5 @@ export default async function handler(req, res) {
     res.status(500).send("❌ Error running automation");
   }
 }
+
+console.log("✅ Automation finished");
