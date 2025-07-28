@@ -57,7 +57,7 @@ function injectEthicsNotices(content) {
   return content + disclosure + attribution + aiNotice;
 }
 
-async function getAmazonImage(keyword) {
+async function getAmazonProduct(keyword) {
   const url = `https://www.amazon.com/s?k=${encodeURIComponent(keyword)}`;
   try {
     const { data } = await axios.get(url, {
@@ -67,11 +67,25 @@ async function getAmazonImage(keyword) {
       }
     });
     const $ = cheerio.load(data);
-    const imageUrl = $('img.s-image').first().attr('src');
-    if (!imageUrl) return null;
-    return imageUrl.replace(/\._.*_\.jpg/, '.jpg');
+
+    const products = [];
+    $('div[data-asin]').each((i, el) => {
+      const asin = $(el).attr('data-asin');
+      if (!asin) return;
+
+      const productUrl = `https://www.amazon.com/dp/${asin}`;
+      const imageUrl = $(el).find('img.s-image').attr('src');
+
+      if (productUrl && imageUrl) {
+        products.push({ productUrl, imageUrl });
+      }
+    });
+
+    if (products.length === 0) return null;
+
+    return products[0];
   } catch (err) {
-    console.error('❌ Amazon image error:', err.message);
+    console.error('❌ Amazon scraping error:', err.message);
     return null;
   }
 }
@@ -151,7 +165,7 @@ async function pushToSubstack(title, content) {
   }
 }
 
-async function postToBlogger(title, markdown, imageUrl) {
+async function postToBlogger(title, markdown, imageUrl, productUrl) {
   try {
     const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
       method: 'POST',
@@ -173,7 +187,9 @@ async function postToBlogger(title, markdown, imageUrl) {
     const blogId = blogData.id;
 
     const htmlContent = `
-      <img src="${imageUrl}" alt="Hero Image" style="max-width:100%;" />
+      <a href="${productUrl || '#'}" target="_blank" rel="noopener">
+        <img src="${imageUrl}" alt="Hero Image" style="max-width:100%;" />
+      </a>
       <div class="post-content">${marked.parse(injectEthicsNotices(markdown))}</div>
     `;
 
@@ -228,13 +244,21 @@ async function generateAndPublishPost(niche, keyword) {
 
     const priceHtml = generatePriceHTML(priceItems);
 
-    const image = await getAmazonImage(keyword);
-    console.log('[OK] Amazon image fetched:', image);
+    const product = await getAmazonProduct(keyword);
+    if (product) {
+      console.log('[OK] Amazon product fetched:', product.productUrl);
+    } else {
+      console.log('[WARN] No Amazon product found');
+    }
 
     await savePostLocally(blogTitle, content, niche, tagsMap[niche], ['Amazon', 'eBay', 'YouTube']);
     console.log('[OK] Post saved locally');
 
-    await postToTelegram(`🧠 *${blogTitle}* is live!`);
+    let telegramMsg = `🧠 *${blogTitle}* is live!`;
+    if (product) {
+      telegramMsg += `\n\n🔗 Amazon Deal: [View Product](${product.productUrl})`;
+    }
+    await postToTelegram(telegramMsg);
     console.log('[OK] Telegram notification sent');
 
     await pushToSubstack(blogTitle, content);
@@ -253,7 +277,7 @@ async function generateAndPublishPost(niche, keyword) {
       console.log('[INFO] No videos found for poll');
     }
 
-    await postToBlogger(blogTitle, content, image);
+    await postToBlogger(blogTitle, content + priceHtml, product?.imageUrl || '', product?.productUrl || '');
     console.log('[OK] Posted to Blogger');
 
     console.log('[SUCCESS] Automation completed');
