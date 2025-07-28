@@ -1,11 +1,13 @@
+import dotenv from 'dotenv';
+dotenv.config();
+
 import fs from 'fs/promises';
 import path from 'path';
+import axios from 'axios';
+import cheerio from 'cheerio';
+import fetch from 'node-fetch';
 import { marked } from 'marked';
-
-const axios = await import('axios').then(m => m.default);
-const cheerio = await import('cheerio');
-const fetch = (await import('node-fetch')).default;
-const { Telegraf } = await import('telegraf');
+import { Telegraf } from 'telegraf';
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const CHAT_ID = process.env.TELEGRAM_CHAT_ID;
@@ -212,7 +214,7 @@ async function savePostLocally(title, content, niche, tags, sources) {
   }
 }
 
-export async function generateAndPublishPost(niche, keyword) {
+async function generateAndPublishPost(niche, keyword) {
   const blogTitle = `Top 5 ${keyword} in 2025`;
 
   try {
@@ -262,17 +264,18 @@ export async function generateAndPublishPost(niche, keyword) {
   }
 }
 
-export default async function handler(req, res) {
+async function main() {
   const index = new Date().getDate() % topics.length;
   const { niche, keyword } = topics[index];
 
   const success = await generateAndPublishPost(niche, keyword);
 
   if (success) {
-    res.status(200).send("✅ TrendifyTube automation completed");
+    console.log("✅ TrendifyTube automation completed");
   } else {
-    res.status(500).send("❌ Error running automation");
+    console.error("❌ Error running automation");
+    process.exit(1);
   }
 }
 
-console.log("✅ Automation finished");
+main();
