@@ -2,6 +2,7 @@
   "name": "my-v0-project",
   "version": "0.1.0",
   "private": true,
+  "type": "module",          <-- ✅ ADD THIS LINE
   "scripts": {
     "build": "next build",
     "postbuild": "npm run clean:sitemap && next-sitemap",
