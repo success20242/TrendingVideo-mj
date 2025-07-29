@@ -1,18 +1,12 @@
 /**
  * TrendifyTube Blogger Automation Script
  * 
- * This script automates the creation and distribution of high-quality affiliate blog posts, integrating the essential qualities of a good blog post:
- * - Clear purpose and focus (topic-driven content)
- * - Compelling title and introduction (dynamic titles, instructive prompt)
- * - Well-organized structure (Markdown, headers, bullet points, price tables, sources)
- * - Valuable and relevant, original content (AI-generated, current products)
- * - SEO optimization (tags, metadata)
- * - Visual and engaging (YouTube video fetch, price comparison section)
- * - Clear language and call to action (Telegram, Substack, Blogger notifications)
- * - Disclosure and attribution (ethics notices, sources)
- * - Error handling and professionalism (proofreading, logging)
- * 
- * Each product listed is required to have a valid, official, or trusted retailer URL.
+ * This script automates the creation and distribution of high-quality affiliate blog posts.
+ * - Fetches Amazon and eBay product images (Amazon preferred, eBay fallback)
+ * - Ensures product links are visible (in a dedicated section)
+ * - Posts to Blogger, Telegram (with blog link), Substack, and saves locally
+ * - Includes trending YouTube videos and engagement poll to Telegram
+ * - SEO, ethics, and disclosure handling
  */
 
 import dotenv from 'dotenv';
@@ -49,7 +43,6 @@ const topics = [
   { niche: 'mental-wellness', keyword: 'guided meditation apps 2025' }
 ];
 
-// SEO and organization: tags by topic
 const tagsMap = {
   'tech-top-picks': ['Tech', 'Gadgets', 'Smart Devices'],
   'study-ai-tools': ['AI', 'Education', 'Study Tools'],
@@ -63,12 +56,10 @@ const tagsMap = {
   'mental-wellness': ['Wellness', 'Meditation', 'Mindfulness']
 };
 
-// Utility for clean filenames
 function slugify(text) {
   return text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
 }
 
-// Insert ethics section, sources, and AI notice for transparency and credibility
 function injectEthicsNotices(content) {
   const disclosure = `\n\n<p><strong>Disclosure:</strong> This post may contain affiliate links. If you use these links to buy something, we may earn a commission.</p>`;
   const attribution = `
@@ -83,7 +74,6 @@ function injectEthicsNotices(content) {
   return content + disclosure + attribution + aiNotice;
 }
 
-// Generate high-quality, affiliate-ready blog post with product links
 async function generateBlogPost(niche, keywords) {
   const prompt = `
 Write a professional, high-standard blog post titled "Top 5 ${keywords} in 2025" with affiliate-style product highlights, intro, bullet points, and summary.
@@ -119,7 +109,7 @@ Your writing should be original, valuable, and tailored for readers interested i
   return data.choices[0].message.content;
 }
 
-// Scrape eBay for top 3 product listings (value, trust, real links)
+// Scrape eBay for top 3 product listings (with images)
 async function getProductPrices(keyword) {
   const ebayUrl = `https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(keyword)}`;
   const res = await axios.get(ebayUrl);
@@ -131,16 +121,45 @@ async function getProductPrices(keyword) {
     const title = $(el).find('.s-item__title').text();
     const price = $(el).find('.s-item__price').text();
     const link = $(el).find('a.s-item__link').attr('href');
-    if (title && price && link && !seen.has(title + price)) {
+    const img = $(el).find('.s-item__image-img').attr('src') || $(el).find('img').attr('src');
+    if (title && price && link && img && !seen.has(title + price)) {
       seen.add(title + price);
-      items.push({ title, price, link });
+      items.push({ title, price, link, img });
     }
     if (items.length >= 3) return false;
   });
   return items;
 }
 
-// Visual, structured price list for clarity and engagement
+// Scrape first Amazon product image for a keyword
+async function getAmazonProductImage(keyword) {
+  try {
+    const amazonUrl = `https://www.amazon.com/s?k=${encodeURIComponent(keyword)}`;
+    const res = await axios.get(amazonUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'
+      }
+    });
+    const cheerioModule = await import('cheerio');
+    const $ = cheerioModule.load(res.data);
+
+    let img = null;
+    $('img.s-image').each((i, el) => {
+      const src = $(el).attr('src');
+      if (src && src.includes('amazon')) {
+        img = src;
+        return false; // break loop
+      }
+    });
+
+    return img;
+  } catch (err) {
+    console.warn('Amazon image fetch failed:', err.message);
+    return null;
+  }
+}
+
+// Price comparison section
 function generatePriceHTML(items) {
   const seen = new Set();
   const unique = items.filter(i => {
@@ -154,6 +173,17 @@ function generatePriceHTML(items) {
     '</ul></section>';
 }
 
+// Explicit visible product links section
+function generateProductLinksHTML(items) {
+  if (!items.length) return '';
+  return `<section>
+    <h3>🔗 Product Links</h3>
+    <ul>
+      ${items.map(i => `<li><a href="${i.link}" target="_blank" rel="noopener sponsored nofollow">${i.title}</a></li>`).join('\n')}
+    </ul>
+  </section>`;
+}
+
 // Fetch trending YouTube videos for visual/engagement value
 async function fetchYouTubeTopVideos(keyword) {
   const RSS_URL = `https://www.youtube.com/feeds/videos.xml?search_query=${encodeURIComponent(keyword)}`;
@@ -164,7 +194,7 @@ async function fetchYouTubeTopVideos(keyword) {
   return matches.slice(1, 4).map(t => t[1]);
 }
 
-// Notify Telegram group with call to action (CTA)
+// Notify Telegram group
 async function postToTelegram(message) {
   try {
     await bot.telegram.sendMessage(CHAT_ID, message, { parse_mode: 'Markdown' });
@@ -173,7 +203,6 @@ async function postToTelegram(message) {
   }
 }
 
-// Poll for engagement
 async function sendPoll(title, options) {
   try {
     await bot.telegram.sendPoll(CHAT_ID, `📊 ${title}`, options.slice(0, 4), { is_anonymous: false });
@@ -182,7 +211,6 @@ async function sendPoll(title, options) {
   }
 }
 
-// Distribute to Substack for audience reach (CTA)
 async function pushToSubstack(title, content) {
   try {
     await axios.post(SUBSTACK_WEBHOOK, { title, content });
@@ -191,7 +219,7 @@ async function pushToSubstack(title, content) {
   }
 }
 
-// Publish to Blogger (SEO, structure, disclosure, CTA)
+// Publish to Blogger and return the published URL
 async function postToBlogger(title, markdown, imageUrl, productUrl) {
   try {
     const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
@@ -213,8 +241,8 @@ async function postToBlogger(title, markdown, imageUrl, productUrl) {
     const blogData = await blogRes.json();
     const blogId = blogData.id;
 
-    // Structure the HTML for clarity and organization
     const htmlContent = `
+      ${imageUrl ? `<img src="${imageUrl}" alt="${title}" style="max-width:100%;height:auto;display:block;margin-bottom:1rem;" />` : ''}
       <div class="post-content">${marked.parse(injectEthicsNotices(markdown))}</div>
     `;
 
@@ -229,12 +257,13 @@ async function postToBlogger(title, markdown, imageUrl, productUrl) {
 
     const result = await postRes.json();
     console.log('✅ Blogger post published:', result.url);
+    return result.url;
   } catch (err) {
     console.error('❌ Blogger posting failed:', err.message);
+    return '';
   }
 }
 
-// Save locally with SEO, tags, sources, and clear structure
 async function savePostLocally(title, content, niche, tags, sources) {
   try {
     const now = new Date();
@@ -268,52 +297,53 @@ sources: [
   }
 }
 
-// Main post generation and publishing workflow
+// Main workflow
 async function generateAndPublishPost(niche, keyword) {
   const blogTitle = `Top 5 ${keyword} in 2025`;
 
   try {
     console.log(`[START] Generating blog post for niche=${niche}, keyword=${keyword}`);
 
-    // 1. Generate blog post (ensures valid product links, structure, and value)
     const content = await generateBlogPost(niche, keyword);
-
-    // 2. Fetch price comparisons for added value
     const priceItems = await getProductPrices(keyword);
     console.log('[OK] Product prices fetched:', priceItems.length);
 
-    const priceHtml = generatePriceHTML(priceItems);
+    const amazonImg = await getAmazonProductImage(keyword);
+    let imageUrl = amazonImg || priceItems[0]?.img || '';
 
-    // 3. Save locally with all metadata and structure
+    const priceHtml = generatePriceHTML(priceItems);
+    const productLinksHtml = generateProductLinksHTML(priceItems);
+
     await savePostLocally(blogTitle, content, niche, tagsMap[niche], []);
     console.log('[OK] Post saved locally');
 
-    // 4. Notify via Telegram (CTA)
-    let telegramMsg = `🧠 *${blogTitle}* is live!\n\nRead now on our blog.`;
-    await postToTelegram(telegramMsg);
-    console.log('[OK] Telegram notification sent');
-
-    // 5. Distribute to Substack
     await pushToSubstack(blogTitle, content);
     console.log('[OK] Pushed to Substack');
 
-    // 6. Fetch trending YouTube videos (visual engagement)
     const videos = await fetchYouTubeTopVideos(keyword);
     console.log('[OK] Fetched YouTube videos:', videos);
 
     if (videos.length > 0) {
       await postToTelegram(`🎥 Trending Videos:\n- ${videos.join('\n- ')}`);
       console.log('[OK] Trending videos posted to Telegram');
-
       await sendPoll('Which product should we review next?', videos);
       console.log('[OK] Telegram poll sent');
     } else {
       console.log('[INFO] No videos found for poll');
     }
 
-    // 7. Publish to Blogger with price comparison and full disclosure/attribution
-    await postToBlogger(blogTitle, content + priceHtml, '', '');
+    // Compose blog post with explicit product links and price comparison
+    const blogUrl = await postToBlogger(
+      blogTitle,
+      content + productLinksHtml + priceHtml,
+      imageUrl,
+      priceItems[0]?.link || ''
+    );
     console.log('[OK] Posted to Blogger');
+
+    let telegramMsg = `🧠 *${blogTitle}* is live!\n\n[Read now on our blog](${blogUrl})`;
+    await postToTelegram(telegramMsg);
+    console.log('[OK] Telegram notification sent');
 
     console.log('[SUCCESS] Automation completed');
     return true;
@@ -323,7 +353,6 @@ async function generateAndPublishPost(niche, keyword) {
   }
 }
 
-// Main loop: select today's topic to keep posts fresh and focused
 async function main() {
   const index = new Date().getDate() % topics.length;
   const { niche, keyword } = topics[index];
