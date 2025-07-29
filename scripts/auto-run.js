@@ -123,8 +123,8 @@ Your writing should be original, valuable, and tailored for readers interested i
 async function getProductPrices(keyword) {
   const ebayUrl = `https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(keyword)}`;
   const res = await axios.get(ebayUrl);
-  const cheerio = (await import('cheerio')).default;
-  const $ = cheerio.load(res.data);
+  const cheerioModule = await import('cheerio');
+  const $ = cheerioModule.load(res.data);
   const items = [];
   const seen = new Set();
   $('.s-item').each((i, el) => {
