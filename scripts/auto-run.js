@@ -64,12 +64,12 @@ const tagsMap = {
 };
 
 // Utility for clean filenames
-function slugify(text: string) {
+function slugify(text) {
   return text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
 }
 
 // Insert ethics section, sources, and AI notice for transparency and credibility
-function injectEthicsNotices(content: string) {
+function injectEthicsNotices(content) {
   const disclosure = `\n\n<p><strong>Disclosure:</strong> This post may contain affiliate links. If you use these links to buy something, we may earn a commission.</p>`;
   const attribution = `
 <p><em>Sources:</em>
@@ -84,7 +84,7 @@ function injectEthicsNotices(content: string) {
 }
 
 // Generate high-quality, affiliate-ready blog post with product links
-async function generateBlogPost(niche: string, keywords: string) {
+async function generateBlogPost(niche, keywords) {
   const prompt = `
 Write a professional, high-standard blog post titled "Top 5 ${keywords} in 2025" with affiliate-style product highlights, intro, bullet points, and summary.
 
@@ -120,12 +120,12 @@ Your writing should be original, valuable, and tailored for readers interested i
 }
 
 // Scrape eBay for top 3 product listings (value, trust, real links)
-async function getProductPrices(keyword: string) {
+async function getProductPrices(keyword) {
   const ebayUrl = `https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(keyword)}`;
   const res = await axios.get(ebayUrl);
   const cheerio = (await import('cheerio')).default;
   const $ = cheerio.load(res.data);
-  const items: { title: string; price: string; link: string }[] = [];
+  const items = [];
   const seen = new Set();
   $('.s-item').each((i, el) => {
     const title = $(el).find('.s-item__title').text();
@@ -141,7 +141,7 @@ async function getProductPrices(keyword: string) {
 }
 
 // Visual, structured price list for clarity and engagement
-function generatePriceHTML(items: { title: string; price: string; link: string }[]) {
+function generatePriceHTML(items) {
   const seen = new Set();
   const unique = items.filter(i => {
     const key = i.title + i.price;
@@ -155,7 +155,7 @@ function generatePriceHTML(items: { title: string; price: string; link: string }
 }
 
 // Fetch trending YouTube videos for visual/engagement value
-async function fetchYouTubeTopVideos(keyword: string) {
+async function fetchYouTubeTopVideos(keyword) {
   const RSS_URL = `https://www.youtube.com/feeds/videos.xml?search_query=${encodeURIComponent(keyword)}`;
   const response = await fetch(RSS_URL);
   const xml = await response.text();
@@ -165,34 +165,34 @@ async function fetchYouTubeTopVideos(keyword: string) {
 }
 
 // Notify Telegram group with call to action (CTA)
-async function postToTelegram(message: string) {
+async function postToTelegram(message) {
   try {
     await bot.telegram.sendMessage(CHAT_ID, message, { parse_mode: 'Markdown' });
-  } catch (err: any) {
+  } catch (err) {
     console.error('❌ Telegram send message error:', err.message);
   }
 }
 
 // Poll for engagement
-async function sendPoll(title: string, options: string[]) {
+async function sendPoll(title, options) {
   try {
     await bot.telegram.sendPoll(CHAT_ID, `📊 ${title}`, options.slice(0, 4), { is_anonymous: false });
-  } catch (err: any) {
+  } catch (err) {
     console.error('❌ Telegram send poll error:', err.message);
   }
 }
 
 // Distribute to Substack for audience reach (CTA)
-async function pushToSubstack(title: string, content: string) {
+async function pushToSubstack(title, content) {
   try {
     await axios.post(SUBSTACK_WEBHOOK, { title, content });
-  } catch (err: any) {
+  } catch (err) {
     console.error('❌ Substack webhook failed:', err.message);
   }
 }
 
 // Publish to Blogger (SEO, structure, disclosure, CTA)
-async function postToBlogger(title: string, markdown: string, imageUrl: string, productUrl: string) {
+async function postToBlogger(title, markdown, imageUrl, productUrl) {
   try {
     const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
       method: 'POST',
@@ -229,13 +229,13 @@ async function postToBlogger(title: string, markdown: string, imageUrl: string, 
 
     const result = await postRes.json();
     console.log('✅ Blogger post published:', result.url);
-  } catch (err: any) {
+  } catch (err) {
     console.error('❌ Blogger posting failed:', err.message);
   }
 }
 
 // Save locally with SEO, tags, sources, and clear structure
-async function savePostLocally(title: string, content: string, niche: string, tags: string[], sources: string[]) {
+async function savePostLocally(title, content, niche, tags, sources) {
   try {
     const now = new Date();
     const yearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
@@ -269,7 +269,7 @@ sources: [
 }
 
 // Main post generation and publishing workflow
-async function generateAndPublishPost(niche: string, keyword: string) {
+async function generateAndPublishPost(niche, keyword) {
   const blogTitle = `Top 5 ${keyword} in 2025`;
 
   try {
