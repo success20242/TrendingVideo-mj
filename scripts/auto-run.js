@@ -76,20 +76,24 @@ function injectEthicsNotices(content) {
 
 async function generateBlogPost(niche, keywords) {
   const prompt = `
-Write a professional, high-standard blog post titled "Top 5 ${keywords} in 2025" with affiliate-style product highlights, intro, bullet points, and summary.
+Write a professional, high-quality blog post titled "Top 5 ${keywords} in 2025" featuring affiliate-style product highlights, including an engaging introduction, bullet points for features, and a clear summary.
 
-- Start with an engaging introduction that sets the purpose and relevance.
-- For each product, include a real, official or Amazon/retailer purchase link as a Markdown hyperlink (e.g. [Product Name](https://...)), directly after the product name in the highlight. Example: 
-
+Important:
+- Do NOT repeat any topic from this list of recent posts: ${recentTopics.join(", ")}.
+- Make sure the content and products are unique and have not appeared in the last 30 days.
+- Begin with an engaging introduction explaining the purpose and relevance of the list.
+- For each product:
+  - Include the product name as a Markdown hyperlink to a real, official, Amazon, or trusted retailer purchase page (e.g. [Product Name](https://...)) immediately after the product name. Example: 
 "1. [Anker PowerCore Fusion Solar Charger](https://www.anker.com/products/a1625): This charger ..."
 
-- Use bullet points for key product features and benefits.
-- Ensure every product has a valid link—do not use placeholders or fake URLs.
-- Structure content with clear headings and concise, readable paragraphs.
-- End with a summary, sources, and disclosure.
+  - Provide bullet points detailing key features and benefits.
+  - Ensure every product has a valid link—do not use placeholders or fake URLs.
+- Organize content using clear headings and concise, easy-to-read paragraphs.
+- Conclude with a summary, list of sources, and an affiliate disclosure statement.
 
-Your writing should be original, valuable, and tailored for readers interested in ${keywords}. Use clear, professional language.
-  `.trim();
+Make sure the content is original, informative, and tailored to readers interested in ${keywords}. Use clear, professional language throughout.
+`.trim();
+  
   const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
     headers: {

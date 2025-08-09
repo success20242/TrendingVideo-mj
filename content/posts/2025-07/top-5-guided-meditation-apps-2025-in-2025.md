@@ -1,4 +1,3 @@
---- 
 title: "Top 5 guided meditation apps 2025 in 2025" 
 date: "2025-07-29T08:28:47.906Z" 
 niche: "mental-wellness" 
@@ -8,7 +7,6 @@ sources: [
   "Industry trend reports from Grand View Research",
   "AI-assisted product summaries via OpenAI + Groq API"
 ]
----
 
 **Top 5 Guided Meditation Apps in 2025**
 
@@ -92,3 +90,5 @@ The world of guided meditation apps offers a diverse range of tools to support m
 ## Disclosure:
 
 This post contains affiliate links, which means that if you click on one of the product links, we'll earn a commission at no extra cost to you. We only promote products that we believe in and that will benefit our readers. Your support helps us continue to produce high-quality content.
+
+This post contains affiliate links, which means that if you click on one of the product links, we'll earn a commission at no extra cost to you. We only recommend products that we believe in and that will benefit our readers.
