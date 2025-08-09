@@ -19,7 +19,7 @@ import fetch from 'node-fetch';
 import { marked } from 'marked';
 import { Telegraf } from 'telegraf';
 
-import { getRecentTopics } from '../getRecentTopics.js';
+import recentTopics from '../getRecentTopics.js';
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const CHAT_ID = process.env.TELEGRAM_CHAT_ID;
