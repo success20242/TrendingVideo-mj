@@ -19,6 +19,8 @@ import fetch from 'node-fetch';
 import { marked } from 'marked';
 import { Telegraf } from 'telegraf';
 
+import recentTopics from './getRecentTopics.js';
+
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
@@ -75,6 +77,7 @@ function injectEthicsNotices(content) {
 }
 
 async function generateBlogPost(niche, keywords) {
+  const topicsList = recentTopics.length > 0 ? recentTopics.join(", ") : "none";
   const prompt = `
 Write a professional, high-quality blog post titled "Top 5 ${keywords} in 2025" featuring affiliate-style product highlights, including an engaging introduction, bullet points for features, and a clear summary.
 
