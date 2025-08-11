@@ -16,7 +16,7 @@ import axios from 'axios';
 import fetch from 'node-fetch';
 import { marked } from 'marked';
 import { Telegraf } from 'telegraf';
-import cheerioModule from 'cheerio';
+import { load } from 'cheerio';
 import cloudinary from 'cloudinary';
 
 cloudinary.v2.config({
@@ -121,7 +121,7 @@ Make sure the content is original, informative, and tailored to readers interest
 async function getProductPrices(keyword) {
   const ebayUrl = `https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(keyword)}`;
   const res = await axios.get(ebayUrl);
-  const $ = cheerioModule.load(res.data);
+  const $ = load(res.data);
   const items = [];
   const seen = new Set();
   $('.s-item').each((i, el) => {
@@ -147,7 +147,7 @@ async function getAmazonProductImage(keyword) {
           'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3',
       },
     });
-    const $ = cheerioModule.load(res.data);
+    const $ = load(res.data);
 
     let img = null;
     $('img.s-image').each((i, el) => {
