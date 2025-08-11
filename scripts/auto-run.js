@@ -16,7 +16,7 @@ import axios from 'axios';
 import fetch from 'node-fetch';
 import { marked } from 'marked';
 import { Telegraf } from 'telegraf';
-import * as cheerioModule from 'cheerio';
+import cheerioModule from 'cheerio';
 import cloudinary from 'cloudinary';
 
 cloudinary.v2.config({
