@@ -1,10 +1,10 @@
 /**
- * TrendifyTube Blogger Automation Script (Harmonized)
+ * TrendifyTube Blogger Automation Script (Fully Integrated)
  *
  * Automates creation and distribution of affiliate blog posts.
- * Fetches Amazon & eBay products (with images), uploads images to Cloudinary,
- * posts to Blogger, Telegram, Substack, and saves locally.
- * Includes trending YouTube videos and Telegram poll.
+ * Features: Amazon & eBay product scraping, Cloudinary image hosting,
+ * Blogger posting, Telegram notifications & polls, Substack webhook,
+ * trending YouTube videos, and original commentary generation.
  */
 
 import dotenv from 'dotenv';
@@ -15,8 +15,8 @@ import path from 'path';
 import axios from 'axios';
 import fetch from 'node-fetch';
 import { marked } from 'marked';
-import { Telegraf } from 'telegraf';
 import { load } from 'cheerio';
+import { Telegraf } from 'telegraf';
 import cloudinary from 'cloudinary';
 
 cloudinary.v2.config({
@@ -37,6 +37,7 @@ const BLOG_URL = process.env.BLOG_URL;
 
 const bot = new Telegraf(BOT_TOKEN);
 
+// --- Topics and tags ---
 const topics = [
   { niche: 'tech-top-picks', keyword: 'smartwatches under $100' },
   { niche: 'study-ai-tools', keyword: 'AI tools for students' },
@@ -81,30 +82,49 @@ function injectEthicsNotices(content) {
   return content + disclosure + attribution + aiNotice;
 }
 
+// --- Generate main blog post ---
 async function generateBlogPost(niche, keywords, recentTopics) {
   const prompt = `
 Write a professional, high-quality blog post titled "Top 5 ${keywords} in 2025" featuring affiliate-style product highlights, including an engaging introduction, bullet points for features, and a clear summary.
-
 Important:
 - Do NOT repeat any topic from this list of recent posts: ${recentTopics.join(", ")}.
-- Make sure the content and products are unique and have not appeared in the last 30 days.
 - Begin with an engaging introduction explaining the purpose and relevance of the list.
 - For each product:
-  - Include the product name as a Markdown hyperlink to a real, official, Amazon, or trusted retailer purchase page.
+  - Include the product name as a Markdown hyperlink to a real, official purchase page.
   - Provide bullet points detailing key features and benefits.
-  - Ensure every product has a valid link—do not use placeholders or fake URLs.
-- Organize content using clear headings and concise, easy-to-read paragraphs.
+  - Ensure every product has a valid link.
 - Conclude with a summary, list of sources, and an affiliate disclosure statement.
-
-Make sure the content is original, informative, and tailored to readers interested in ${keywords}. Use clear, professional language throughout.
+Use clear, professional language tailored to readers interested in ${keywords}.
 `.trim();
 
   const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
-    headers: {
-      Authorization: `Bearer ${GROQ_API_KEY}`,
-      'Content-Type': 'application/json',
-    },
+    headers: { Authorization: `Bearer ${GROQ_API_KEY}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'meta-llama/llama-4-scout-17b-16e-instruct',
+      messages: [{ role: 'user', content: prompt }],
+      temperature: 0.7,
+    }),
+  });
+
+  const data = await response.json();
+  if (!data.choices || !data.choices[0]?.message?.content) throw new Error('Groq API error.');
+  return data.choices[0].message.content;
+}
+
+// --- Generate original commentary ---
+async function generateOriginalCommentary(product) {
+  const prompt = `
+Write a 250-word original, human-like commentary about this product:
+- Product: ${product.title}
+- Summary: ${product.summary || "No summary available"}
+- Include pros, cons, target users, tips, and usage ideas.
+- Write as if you personally tested the product.
+- Avoid copying from any sources.
+`;
+  const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${GROQ_API_KEY}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
       model: 'meta-llama/llama-4-scout-17b-16e-instruct',
       messages: [{ role: 'user', content: prompt }],
@@ -112,12 +132,10 @@ Make sure the content is original, informative, and tailored to readers interest
     }),
   });
   const data = await response.json();
-  if (!data.choices || !data.choices[0]?.message?.content) {
-    throw new Error('Groq API did not return expected content.');
-  }
   return data.choices[0].message.content;
 }
 
+// --- Product scraping and image upload ---
 async function getProductPrices(keyword) {
   const ebayUrl = `https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(keyword)}`;
   const res = await axios.get(ebayUrl);
@@ -143,34 +161,22 @@ async function getAmazonProductImage(keyword) {
     const amazonUrl = `https://www.amazon.com/s?k=${encodeURIComponent(keyword)}`;
     const res = await axios.get(amazonUrl, {
       headers: {
-        'User-Agent':
-          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
       },
     });
     const $ = load(res.data);
-
     let img = null;
     $('img.s-image').each((i, el) => {
       const src = $(el).attr('src');
       if (src && src.includes('amazon')) {
         img = src;
-        return false; // break loop
+        return false;
       }
     });
-
     return img;
   } catch (err) {
     console.warn('Amazon image fetch failed:', err.message);
     return null;
-  }
-}
-
-async function validateUrl(url) {
-  try {
-    const res = await fetch(url, { method: 'HEAD', redirect: 'follow', timeout: 5000 });
-    return res.ok;
-  } catch {
-    return false;
   }
 }
 
@@ -255,25 +261,16 @@ async function pushToSubstack(title, content) {
   }
 }
 
+// --- Blogger posting ---
 async function postToBlogger(title, markdown, imageUrl, productUrl) {
   try {
-    // Validate product URL before posting
-    if (productUrl && !(await validateUrl(productUrl))) {
-      console.warn('Invalid product URL, skipping:', productUrl);
-      productUrl = '';
+    if (productUrl) {
+      try { await fetch(productUrl, { method: 'HEAD', redirect: 'follow', timeout: 5000 }); }
+      catch { productUrl = ''; }
     }
+    let hostedImageUrl = imageUrl ? await uploadImageToCloudinary(imageUrl) : null;
+    if (!hostedImageUrl) hostedImageUrl = imageUrl;
 
-    // Upload image to Cloudinary if not already hosted there
-    let hostedImageUrl = null;
-    if (imageUrl) {
-      hostedImageUrl = await uploadImageToCloudinary(imageUrl);
-      if (!hostedImageUrl) {
-        console.warn('Using original image URL due to upload failure');
-        hostedImageUrl = imageUrl;
-      }
-    }
-
-    // OAuth token refresh
     const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -284,35 +281,26 @@ async function postToBlogger(title, markdown, imageUrl, productUrl) {
         grant_type: 'refresh_token',
       }),
     });
-    const tokenData = await tokenRes.json();
-    const accessToken = tokenData.access_token;
+    const accessToken = (await tokenRes.json()).access_token;
 
-    // Get blog ID
     const blogRes = await fetch(`https://www.googleapis.com/blogger/v3/blogs/byurl?url=${BLOG_URL}`, {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
-    const blogData = await blogRes.json();
-    const blogId = blogData.id;
+    const blogId = (await blogRes.json()).id;
 
-    // Compose HTML content
     const htmlContent = `
-      ${hostedImageUrl ? `<img src="${hostedImageUrl}" alt="${title}" style="max-width:100%;height:auto;display:block;margin-bottom:1rem;" />` : ''}
+      ${hostedImageUrl ? `<img src="${hostedImageUrl}" alt="${title}" style="max-width:100%;height:auto;margin-bottom:1rem;" />` : ''}
       <div class="post-content">${marked.parse(injectEthicsNotices(markdown))}</div>
-      ${productUrl ? `<p><a href="${productUrl}" rel="nofollow noopener" target="_blank" style="background:#d32f2f; color:#fff; padding:10px 20px; border-radius:6px; text-decoration:none;">Buy Now</a></p>` : ''}
+      ${productUrl ? `<p><a href="${productUrl}" rel="nofollow noopener" target="_blank" style="background:#d32f2f;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;">Buy Now</a></p>` : ''}
     `;
 
-    // Publish post
     const postRes = await fetch(`https://www.googleapis.com/blogger/v3/blogs/${blogId}/posts/`, {
       method: 'POST',
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-      },
+      headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ kind: 'blogger#post', title, content: htmlContent }),
     });
 
     const result = await postRes.json();
-
     console.log('Blogger post published:', result.url);
     return result.url;
   } catch (err) {
@@ -327,85 +315,48 @@ async function savePostLocally(title, content, niche, tags) {
     const yearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
     const slug = slugify(title);
     const dir = path.join(process.cwd(), 'content', 'posts', yearMonth);
-
     await fs.mkdir(dir, { recursive: true });
 
-    const frontmatter = `---
-title: "${title}"
-date: "${now.toISOString()}"
-niche: "${niche}"
-tags: [${tags.map((t) => `"${t}"`).join(', ')}]
-sources: [
-  "Product listings from Amazon and eBay (2025)",
-  "Industry trend reports from Grand View Research",
-  "AI-assisted product summaries via OpenAI + Groq API"
-]
----
-
-`;
-
-    const fullContent = frontmatter + content;
-
-    await fs.writeFile(path.join(dir, `${slug}.md`), fullContent, 'utf8');
-
+    const frontmatter = `---\ntitle: "${title}"\ndate: "${now.toISOString()}"\nniche: "${niche}"\ntags: [${tags.map((t) => `"${t}"`).join(', ')}]\n---\n\n`;
+    await fs.writeFile(path.join(dir, `${slug}.md`), frontmatter + content, 'utf8');
     console.log(`Saved post locally at content/posts/${yearMonth}/${slug}.md`);
   } catch (err) {
     console.error('Failed to save post locally:', err);
   }
 }
 
+// --- Main generator ---
 async function generateAndPublishPost(niche, keyword, recentTopics) {
   const blogTitle = `Top 5 ${keyword} in 2025`;
-
   try {
-    console.log(`[START] Generating blog post for niche=${niche}, keyword=${keyword}`);
-
+    console.log(`[START] Generating blog post for ${niche} / ${keyword}`);
     const content = await generateBlogPost(niche, keyword, recentTopics);
 
     const priceItems = await getProductPrices(keyword);
-    console.log('Product prices fetched:', priceItems.length);
-
     const amazonImg = await getAmazonProductImage(keyword);
-    let imageUrl = amazonImg || priceItems[0]?.img || '';
-
-    // Upload main image to Cloudinary
+    const imageUrl = amazonImg || priceItems[0]?.img || '';
     const hostedImageUrl = imageUrl ? await uploadImageToCloudinary(imageUrl) : null;
 
     const priceHtml = generatePriceHTML(priceItems);
     const productLinksHtml = generateProductLinksHTML(priceItems);
 
-    // Compose full markdown with price and product links appended
-    const fullMarkdown = content + productLinksHtml + priceHtml;
+    const originalCommentary = priceItems[0] ? await generateOriginalCommentary(priceItems[0]) : '';
+
+    const fullMarkdown = content + productLinksHtml + priceHtml + `\n\n${originalCommentary}`;
 
     await savePostLocally(blogTitle, fullMarkdown, niche, tagsMap[niche]);
-    console.log('Post saved locally');
-
     await pushToSubstack(blogTitle, fullMarkdown);
-    console.log('Pushed to Substack');
 
     const videos = await fetchYouTubeTopVideos(keyword);
-    console.log('Fetched YouTube videos:', videos);
-
     if (videos.length > 0) {
       await postToTelegram(`🎥 Trending Videos:\n- ${videos.join('\n- ')}`);
-      console.log('Trending videos posted to Telegram');
       await sendPoll('Which product should we review next?', videos);
-      console.log('Telegram poll sent');
-    } else {
-      console.log('No videos found for poll');
     }
 
-    // Publish to Blogger
     const blogPostUrl = await postToBlogger(blogTitle, fullMarkdown, hostedImageUrl, priceItems[0]?.link || '');
-    console.log('Posted to Blogger');
+    if (blogPostUrl) await postToTelegram(`🧠 *${blogTitle}* is live!\n\n[Read now on our blog](${blogPostUrl})`);
 
-    if (blogPostUrl) {
-      const telegramMsg = `🧠 *${blogTitle}* is live!\n\n[Read now on our blog](${blogPostUrl})`;
-      await postToTelegram(telegramMsg);
-      console.log('Telegram notification sent');
-    }
-
-    console.log('Automation completed successfully');
+    console.log('✅ Automation completed successfully');
     return true;
   } catch (err) {
     console.error('Automation error:', err);
@@ -413,20 +364,14 @@ async function generateAndPublishPost(niche, keyword, recentTopics) {
   }
 }
 
+// --- Entry point ---
 async function main() {
-  // Load or import recentTopics here, for now empty array as placeholder
-  const recentTopics = []; // You can replace this with an import or fetch as needed
+  const recentTopics = []; // Load or fetch as needed
   const index = new Date().getDate() % topics.length;
   const { niche, keyword } = topics[index];
 
   const success = await generateAndPublishPost(niche, keyword, recentTopics);
-
-  if (success) {
-    console.log('✅ TrendifyTube automation completed');
-  } else {
-    console.error('❌ Error running automation');
-    process.exit(1);
-  }
+  if (!success) process.exit(1);
 }
 
 main();
