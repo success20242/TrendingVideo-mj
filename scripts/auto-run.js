@@ -1,10 +1,10 @@
 /**
- * TrendifyTube Blogger Automation Script (Fully Integrated)
+ * TrendifyTube Blogger Automation Script (Fully Integrated + OAuth token.json)
  *
  * Automates creation and distribution of affiliate blog posts.
  * Features: Amazon & eBay product scraping, Cloudinary image hosting,
- * Blogger posting, Telegram notifications & polls, Substack webhook,
- * trending YouTube videos, and original commentary generation.
+ * Blogger posting (OAuth token.json via googleapis), Telegram notifications & polls,
+ * Substack webhook, trending YouTube videos, and original commentary generation.
  */
 
 import dotenv from 'dotenv';
@@ -18,7 +18,9 @@ import { marked } from 'marked';
 import { load } from 'cheerio';
 import { Telegraf } from 'telegraf';
 import cloudinary from 'cloudinary';
+import { google } from 'googleapis'; // <-- added for OAuth token.json Blogger API
 
+// ---------------- Cloudinary config ----------------
 cloudinary.v2.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
@@ -26,18 +28,20 @@ cloudinary.v2.config({
   secure: true,
 });
 
+// ---------------- ENV vars ----------------
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
 const SUBSTACK_WEBHOOK = process.env.SUBSTACK_WEBHOOK;
-const CLIENT_ID = process.env.CLIENT_ID;
-const CLIENT_SECRET = process.env.CLIENT_SECRET;
-const REFRESH_TOKEN = process.env.REFRESH_TOKEN;
 const BLOG_URL = process.env.BLOG_URL;
+
+// OAuth files for Blogger
+const CLIENT_SECRET_FILE = 'client_secret.json'; // must exist in project root
+const TOKEN_PATH = 'token.json';                 // persisted OAuth token
 
 const bot = new Telegraf(BOT_TOKEN);
 
-// --- Topics and tags ---
+// ---------------- Topics and tags ----------------
 const topics = [
   { niche: 'tech-top-picks', keyword: 'smartwatches under $100' },
   { niche: 'study-ai-tools', keyword: 'AI tools for students' },
@@ -82,7 +86,7 @@ function injectEthicsNotices(content) {
   return content + disclosure + attribution + aiNotice;
 }
 
-// --- Generate main blog post ---
+// ---------------- Generate main blog post ----------------
 async function generateBlogPost(niche, keywords, recentTopics) {
   const prompt = `
 Write a professional, high-quality blog post titled "Top 5 ${keywords} in 2025" featuring affiliate-style product highlights, including an engaging introduction, bullet points for features, and a clear summary.
@@ -112,7 +116,7 @@ Use clear, professional language tailored to readers interested in ${keywords}.
   return data.choices[0].message.content;
 }
 
-// --- Generate original commentary ---
+// ---------------- Generate original commentary ----------------
 async function generateOriginalCommentary(product) {
   const prompt = `
 Write a 250-word original, human-like commentary about this product:
@@ -135,7 +139,7 @@ Write a 250-word original, human-like commentary about this product:
   return data.choices[0].message.content;
 }
 
-// --- Product scraping and image upload ---
+// ---------------- Product scraping and image upload ----------------
 async function getProductPrices(keyword) {
   const ebayUrl = `https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(keyword)}`;
   const res = await axios.get(ebayUrl);
@@ -261,54 +265,88 @@ async function pushToSubstack(title, content) {
   }
 }
 
-// --- Blogger posting ---
+/* ============================================================
+   Blogger Auth (token.json system via googleapis) + Posting
+   ============================================================ */
+async function getBloggerAuth() {
+  const SCOPES = ['https://www.googleapis.com/auth/blogger'];
+  const auth = new google.auth.OAuth2();
+
+  let creds;
+  try {
+    const content = await fs.readFile(CLIENT_SECRET_FILE, 'utf-8');
+    creds = JSON.parse(content).installed;
+    auth._clientId = creds.client_id;
+    auth._clientSecret = creds.client_secret;
+    auth.redirectUri = creds.redirect_uris[0];
+  } catch (err) {
+    throw new Error('Missing client_secret.json for Blogger API');
+  }
+
+  try {
+    const token = await fs.readFile(TOKEN_PATH, 'utf-8');
+    auth.setCredentials(JSON.parse(token));
+  } catch (err) {
+    const authUrl = auth.generateAuthUrl({ access_type: 'offline', scope: SCOPES });
+    console.log('Authorize this app by visiting this URL:', authUrl);
+    throw new Error('Run once manually with OAuth code exchange to save token.json');
+  }
+
+  // Auto-refresh and save token when refreshed
+  auth.on('tokens', async (tokens) => {
+    if (tokens.refresh_token) {
+      await fs.writeFile(TOKEN_PATH, JSON.stringify(auth.credentials, null, 2));
+    }
+  });
+
+  return auth;
+}
+
+// --- Blogger posting (uses OAuth token.json) ---
 async function postToBlogger(title, markdown, imageUrl, productUrl) {
   try {
+    // Optional: validate product URL quickly
     if (productUrl) {
-      try { await fetch(productUrl, { method: 'HEAD', redirect: 'follow', timeout: 5000 }); }
-      catch { productUrl = ''; }
+      try {
+        await fetch(productUrl, { method: 'HEAD', redirect: 'follow', timeout: 5000 });
+      } catch {
+        productUrl = '';
+      }
     }
+
+    const auth = await getBloggerAuth();
+    const blogger = google.blogger({ version: 'v3', auth });
+
+    // Resolve blog ID by URL
+    const blog = await blogger.blogs.getByUrl({ url: BLOG_URL });
+    const blogId = blog.data.id;
+
+    // Upload image (if provided)
     let hostedImageUrl = imageUrl ? await uploadImageToCloudinary(imageUrl) : null;
     if (!hostedImageUrl) hostedImageUrl = imageUrl;
 
-    const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({
-        client_id: CLIENT_ID,
-        client_secret: CLIENT_SECRET,
-        refresh_token: REFRESH_TOKEN,
-        grant_type: 'refresh_token',
-      }),
-    });
-    const accessToken = (await tokenRes.json()).access_token;
-
-    const blogRes = await fetch(`https://www.googleapis.com/blogger/v3/blogs/byurl?url=${BLOG_URL}`, {
-      headers: { Authorization: `Bearer ${accessToken}` },
-    });
-    const blogId = (await blogRes.json()).id;
-
+    // Build HTML content
     const htmlContent = `
       ${hostedImageUrl ? `<img src="${hostedImageUrl}" alt="${title}" style="max-width:100%;height:auto;margin-bottom:1rem;" />` : ''}
       <div class="post-content">${marked.parse(injectEthicsNotices(markdown))}</div>
       ${productUrl ? `<p><a href="${productUrl}" rel="nofollow noopener" target="_blank" style="background:#d32f2f;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;">Buy Now</a></p>` : ''}
     `;
 
-    const postRes = await fetch(`https://www.googleapis.com/blogger/v3/blogs/${blogId}/posts/`, {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ kind: 'blogger#post', title, content: htmlContent }),
+    // Publish post
+    const post = await blogger.posts.insert({
+      blogId,
+      requestBody: { kind: 'blogger#post', title, content: htmlContent },
     });
 
-    const result = await postRes.json();
-    console.log('Blogger post published:', result.url);
-    return result.url;
+    console.log('✅ Blogger post published:', post.data.url);
+    return post.data.url;
   } catch (err) {
-    console.error('Blogger posting failed:', err.message);
+    console.error('❌ Blogger posting failed:', err.message);
     return '';
   }
 }
 
+// ---------------- Save locally ----------------
 async function savePostLocally(title, content, niche, tags) {
   try {
     const now = new Date();
@@ -325,7 +363,7 @@ async function savePostLocally(title, content, niche, tags) {
   }
 }
 
-// --- Main generator ---
+// ---------------- Main generator ----------------
 async function generateAndPublishPost(niche, keyword, recentTopics) {
   const blogTitle = `Top 5 ${keyword} in 2025`;
   try {
@@ -364,9 +402,9 @@ async function generateAndPublishPost(niche, keyword, recentTopics) {
   }
 }
 
-// --- Entry point ---
+// ---------------- Entry point ----------------
 async function main() {
-  const recentTopics = []; // Load or fetch as needed
+  const recentTopics = []; // Load or fetch as needed to avoid duplicates
   const index = new Date().getDate() % topics.length;
   const { niche, keyword } = topics[index];
 
